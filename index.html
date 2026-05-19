@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Asystent online Restauracji – Demo</title>
+
+    <link rel="stylesheet" href="style.css" />
+  </head>
+
+  <body>
+    <h2>Przykładowa strona restauracji</h2>
+    <p style="color: #666">Automatyczny asystent AI odpowiada klientom 24/7</p>
+
+    <button id="admin-open-btn">Admin</button>
+
+    <div id="admin-login">
+      <button
+        onclick="closeAdminLogin()"
+        style="
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          background: none;
+          border: none;
+          font-size: 20px;
+          cursor: pointer;
+        "
+      >
+        ✕
+      </button>
+      <h3>Logowanie admina</h3>
+
+      <input id="admin-login-user" placeholder="Login" />
+      <input id="admin-login-pass" type="password" placeholder="Hasło" />
+      <button onclick="loginAdmin()">Zaloguj</button>
+    </div>
+
+    <div id="admin-panel">
+      <button
+        onclick="closeAdminPanel()"
+        style="
+          position: absolute;
+          top: -16px;
+          right: -16px;
+
+          width: 36px;
+          height: 36px;
+
+          background: #000;
+          color: #fff;
+
+          border: none;
+          border-radius: 50%;
+
+          font-size: 18px;
+          font-weight: 600;
+
+          cursor: pointer;
+
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          z-index: 99999;
+
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        "
+      >
+        ✕
+      </button>
+
+      <h3>Kanapka tygodnia</h3>
+
+      <input id="admin-name" placeholder="Nazwa kanapki" />
+      <input id="admin-price" placeholder="Cena (np. 29 zł)" />
+
+      <h3>Zdjęcia kanapki</h3>
+      <input id="sandwich-images" type="file" multiple accept="image/*" />
+
+      <div
+        id="sandwich-preview"
+        style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px"
+      ></div>
+
+      <button id="save-all" style="margin-top: 16px">Zapisz zmiany</button
+      ><!-- moved to bottom by JS -->
+    </div>
+
+    <div id="chat-toggle"><img src="logo-wloska-rozmowa.png" /></div>
+    <div id="chat-hint">Cześć 👋<br />Pomogę z menu i rezerwacją</div>
+
+    <div id="chat-box">
+      <div id="chat-header">
+        Asystent restauracji
+        <button id="chat-close">✕</button>
+      </div>
+
+      <div id="chat-messages"></div>
+
+      <!-- BOTTOM CART PANEL WITH STICKY BAR -->
+      <div
+        id="bottom-cart-panel"
+        style="
+          position: absolute;
+          bottom: -20px;
+          left: 0;
+          right: 0;
+          height: 330px;
+          background: linear-gradient(
+            135deg,
+            rgba(255, 255, 255, 0.18) 0%,
+            rgba(180, 0, 0, 0.55) 40%,
+            rgba(120, 0, 0, 0.65) 100%
+          );
+          backdrop-filter: blur(24px) saturate(170%);
+          -webkit-backdrop-filter: blur(24px) saturate(170%);
+          border: 1px solid rgba(255, 255, 255, 0.35);
+          box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.6),
+            0 -6px 20px rgba(0, 0, 0, 0.25);
+          border-top-left-radius: 18px;
+          border-top-right-radius: 18px;
+          overflow: hidden;
+          transform: translateY(240px);
+          transition: transform 0.35s ease;
+        "
+      >
+        <div
+          id="bottom-cart-bar"
+          style="
+            background: #8b0000;
+            color: #fff;
+            text-align: center;
+            padding: 8px 0;
+            cursor: pointer;
+          "
+        >
+          <div id="cart-arrow" style="font-size: 18px">⬆</div>
+          <div style="font-size: 13px">koszyk</div>
+        </div>
+
+        <div style="padding: 12px; overflow: auto; height: 210px">
+          <div id="bottom-cart-items"></div>
+          <div
+            id="bottom-cart-total"
+            style="margin-top: 10px; font-weight: 600"
+          ></div>
+        </div>
+      </div>
+
+      <div id="chat-input">
+        <input id="input" placeholder="Zapytaj nas 👋" />
+        <button id="send">➤</button>
+      </div>
+    </div>
+
+    <div id="menu-modal">
+      <span onclick="closeMenuModal()">✕</span>
+      <img id="menu-modal-img" />
+    </div>
+
+    <!-- ===== ADMIN MENU MANAGER (TABLE VERSION) ===== -->
+
+    <script src="app.js"></script>
+  </body>
+</html>
