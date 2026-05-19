@@ -1779,14 +1779,15 @@ sendMsg = function () {
   oldSendMsg();
 };
 
-/* === BUILD ADMIN 2 COLUMN LAYOUT === */
-window.addEventListener("DOMContentLoaded", function () {
+function buildAdminLayout() {
 
   const panel = document.getElementById("admin-panel");
 
   if (!panel) return;
 
   if (document.querySelector(".admin-columns")) return;
+
+  const children = [...panel.children];
 
   const wrapper = document.createElement("div");
   wrapper.className = "admin-columns";
@@ -1797,17 +1798,18 @@ window.addEventListener("DOMContentLoaded", function () {
   const right = document.createElement("div");
   right.className = "admin-col-right";
 
-  /* move ONLY real content */
-  const elements = [...panel.children];
-
-  elements.forEach((el) => {
-
-    /* skip existing layout */
-    if (el.classList?.contains("admin-columns")) return;
-
+  children.forEach(el => {
     left.appendChild(el);
-
   });
+
+  wrapper.appendChild(left);
+  wrapper.appendChild(right);
+
+  panel.innerHTML = "";
+  panel.appendChild(wrapper);
+}
+
+buildAdminLayout();
 
   wrapper.appendChild(left);
   wrapper.appendChild(right);
@@ -1894,7 +1896,7 @@ window.addEventListener("DOMContentLoaded", async function () {
   syncMenuWithOrderSystem();
 
   /* wait until columns exist */
-  setTimeout(() => {
+  requestAnimationFrame(() => {
 
     const rightCol = document.querySelector(".admin-col-right");
 
@@ -2031,7 +2033,7 @@ window.addEventListener("DOMContentLoaded", async function () {
 
   renderAdminTable();
 
-  }, 50);
+  });
 
 });
 
