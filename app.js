@@ -1855,7 +1855,7 @@ async function saveAdminMenu(data) {
 }
 
 function syncMenuWithOrderSystem() {
-  const data = adminMenuCache
+  const data = adminMenuCache;
 
   /* clear all existing categories in order system */
   for (const k in ORDER_CATEGORIES) {
@@ -2059,7 +2059,7 @@ function renderAdminTable() {
 
     del.onclick = function (e) {
       e.stopPropagation();
-      const d = adminMenuCache
+      const d = adminMenuCache;
       delete d[cat];
       saveAdminMenu(d);
       if (selectedCategory === cat) selectedCategory = null;
@@ -2106,7 +2106,7 @@ function renderAdminTable() {
     del.style.padding = "2px 6px";
 
     del.onclick = function () {
-      const d = adminMenuCache
+      const d = adminMenuCache;
       d[selectedCategory].splice(i, 1);
       saveAdminMenu(d);
       renderAdminTable();
@@ -2183,7 +2183,7 @@ function renderAdminTable() {
       const n = name.value.trim();
       if (!n) return;
 
-      const d = adminMenuCache
+      const d = adminMenuCache;
 
       if (sizeToggle.checked) {
         const s = small.value.trim();
