@@ -1040,7 +1040,7 @@ function showCartUI() {
             /* ===== SAVE ORDER ===== */
 
             try {
-              const response = await fetch("http://localhost:3000/save-order", {
+              const response = await fetch("https://restaurant-backend-7i1c.onrender.com", {
                 method: "POST",
 
                 headers: {
@@ -1821,7 +1821,7 @@ let adminMenuCache = {};
 
 async function loadAdminMenu() {
   try {
-    const res = await fetch("http://localhost:3000/menu");
+    const res = await fetch("https://restaurant-backend-7i1c.onrender.com");
 
     adminMenuCache = await res.json();
 
@@ -1839,7 +1839,7 @@ async function saveAdminMenu(data) {
   adminMenuCache = data;
 
   try {
-    await fetch("http://localhost:3000/save-menu", {
+    await fetch("https://restaurant-backend-7i1c.onrender.com", {
       method: "POST",
 
       headers: {
@@ -2222,7 +2222,7 @@ function renderAdminTable() {
 
 async function askAI(text) {
   try {
-    const res = await fetch("http://localhost:3000/ai", {
+    const res = await fetch("https://restaurant-backend-7i1c.onrender.com", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message: text }),
@@ -2273,7 +2273,7 @@ async function renderOrdersAdmin() {
   let orders = [];
 
   try {
-    const res = await fetch("http://localhost:3000/orders");
+    const res = await fetch("https://restaurant-backend-7i1c.onrender.com");
 
     orders = await res.json();
     const currentJSON = JSON.stringify(orders);
@@ -2518,7 +2518,7 @@ async function renderOrdersAdmin() {
 
 async function updateOrderStatus(orderId, newStatus) {
   try {
-    await fetch("http://localhost:3000/update-order-status", {
+    await fetch("https://restaurant-backend-7i1c.onrender.com", {
       method: "POST",
 
       headers: {
