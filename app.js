@@ -1889,11 +1889,19 @@ let selectedCategory = null;
 
 window.addEventListener("DOMContentLoaded", async function () {
 
-await loadAdminMenu();
+  await loadAdminMenu();
 
-syncMenuWithOrderSystem();
-  const rightCol = document.querySelector(".admin-col-right");
-  if (!rightCol) return;
+  syncMenuWithOrderSystem();
+
+  /* wait until columns exist */
+  setTimeout(() => {
+
+    const rightCol = document.querySelector(".admin-col-right");
+
+    if (!rightCol) {
+      console.error("admin-col-right not found");
+      return;
+    }
 
   /* ===== ADMIN TABS ===== */
 
@@ -2022,6 +2030,9 @@ syncMenuWithOrderSystem();
   menuContainer.appendChild(wrapper);
 
   renderAdminTable();
+
+  }, 50);
+
 });
 
 function renderAdminTable() {
