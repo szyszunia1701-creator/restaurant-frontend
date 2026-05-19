@@ -1779,42 +1779,42 @@ sendMsg = function () {
   oldSendMsg();
 };
 
-/* === BUILD SECOND EMPTY ADMIN COLUMN === */
+/* === BUILD ADMIN 2 COLUMN LAYOUT === */
 window.addEventListener("DOMContentLoaded", function () {
+
   const panel = document.getElementById("admin-panel");
+
   if (!panel) return;
 
-  /* skip if already applied */
-  if (panel.querySelector(".admin-columns")) return;
+  if (document.querySelector(".admin-columns")) return;
 
-  const children = [...panel.children];
-
-  /* keep close button outside layout */
-  let closeBtn = null;
-  children.forEach((el) => {
-    if (el.tagName === "BUTTON" && el.innerText === "✕") closeBtn = el;
-  });
-
-  const container = document.createElement("div");
-  container.className = "admin-columns";
+  const wrapper = document.createElement("div");
+  wrapper.className = "admin-columns";
 
   const left = document.createElement("div");
   left.className = "admin-col-left";
 
   const right = document.createElement("div");
   right.className = "admin-col-right";
-  right.innerHTML = ""; // empty column
 
-  children.forEach((el) => {
-    if (el !== closeBtn) {
-      left.appendChild(el);
-    }
+  /* move ONLY real content */
+  const elements = [...panel.children];
+
+  elements.forEach((el) => {
+
+    /* skip existing layout */
+    if (el.classList?.contains("admin-columns")) return;
+
+    left.appendChild(el);
+
   });
 
-  container.appendChild(left);
-  container.appendChild(right);
+  wrapper.appendChild(left);
+  wrapper.appendChild(right);
 
-  panel.appendChild(container);
+  panel.innerHTML = "";
+  panel.appendChild(wrapper);
+
 });
 
 let adminMenuCache = {};
