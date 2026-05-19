@@ -1821,7 +1821,7 @@ let adminMenuCache = {};
 
 async function loadAdminMenu() {
   try {
-    const res = await fetch("https://restaurant-backend-7i1c.onrender.com");
+    const res = await fetch("https://restaurant-backend-7i1c.onrender.com/menu");
 
     adminMenuCache = await res.json();
 
@@ -1839,7 +1839,7 @@ async function saveAdminMenu(data) {
   adminMenuCache = data;
 
   try {
-    await fetch("https://restaurant-backend-7i1c.onrender.com", {
+    await fetch("https://restaurant-backend-7i1c.onrender.com/save-menu", {
       method: "POST",
 
       headers: {
@@ -2222,7 +2222,7 @@ function renderAdminTable() {
 
 async function askAI(text) {
   try {
-    const res = await fetch("https://restaurant-backend-7i1c.onrender.com", {
+    const res = await fetch("https://restaurant-backend-7i1c.onrender.com/ai", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message: text }),
@@ -2273,7 +2273,7 @@ async function renderOrdersAdmin() {
   let orders = [];
 
   try {
-    const res = await fetch("https://restaurant-backend-7i1c.onrender.com");
+    const res = await fetch("https://restaurant-backend-7i1c.onrender.com/orders");
 
     orders = await res.json();
     const currentJSON = JSON.stringify(orders);
@@ -2518,7 +2518,7 @@ async function renderOrdersAdmin() {
 
 async function updateOrderStatus(orderId, newStatus) {
   try {
-    await fetch("https://restaurant-backend-7i1c.onrender.com", {
+    await fetch("https://restaurant-backend-7i1c.onrender.com/update-order-status", {
       method: "POST",
 
       headers: {
