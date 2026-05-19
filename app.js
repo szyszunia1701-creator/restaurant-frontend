@@ -1811,14 +1811,6 @@ function buildAdminLayout() {
 
 buildAdminLayout();
 
-  wrapper.appendChild(left);
-  wrapper.appendChild(right);
-
-  panel.innerHTML = "";
-  panel.appendChild(wrapper);
-
-});
-
 let adminMenuCache = {};
 
 async function loadAdminMenu() {
