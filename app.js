@@ -1040,7 +1040,7 @@ function showCartUI() {
             /* ===== SAVE ORDER ===== */
 
             try {
-              const response = await fetch("https://restaurant-backend-7i1c.onrender.com", {
+              const response = await fetch("https://restaurant-backend-7i1c.onrender.com/save-order", {
                 method: "POST",
 
                 headers: {
