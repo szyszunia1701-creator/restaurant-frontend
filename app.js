@@ -1848,17 +1848,13 @@ async function loadMenuFromBackend() {
 
     const data = await res.json();
 
-    localStorage.setItem(
-      "adminMenuData",
-      JSON.stringify(data)
-    );
+    localStorage.setItem("adminMenuData", JSON.stringify(data));
 
     syncMenuWithOrderSystem();
 
     if (typeof renderAdminTable === "function") {
       renderAdminTable();
     }
-
   } catch (e) {
     console.error(e);
   }
@@ -2033,7 +2029,7 @@ window.addEventListener("DOMContentLoaded", function () {
   renderAdminTable();
 });
 
- {
+function renderAdminTable() {
   const data = getAdminMenu();
 
   const catCol = document.getElementById("cat-col");
@@ -2115,7 +2111,7 @@ window.addEventListener("DOMContentLoaded", function () {
     del.style.padding = "2px 6px";
 
     del.onclick = function () {
-      const d = getAdminMenu();function renderAdminTable()
+      const d = getAdminMenu();
       d[selectedCategory].splice(i, 1);
       saveAdminMenu(d);
       renderAdminTable();
