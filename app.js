@@ -1842,7 +1842,7 @@ function saveAdminMenu(data) {
 
 async function loadMenuFromBackend() {
   try {
-    const res = await fetch(`${API_BASE}/menu`);
+    const res = await fetch(`${API_BASE}/menu-sheets`);
 
     if (!res.ok) return;
 
