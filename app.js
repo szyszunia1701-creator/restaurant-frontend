@@ -1,4 +1,5 @@
 const RESTAURANT_NAME = "Wloska robota bistro";
+const API_BASE = "https://restaurant-backend-7i1c.onrender.com";
 
 /* ===== RESTAURANT STATUS SYSTEM ===== */
 function isRestaurantOpen() {
@@ -1040,7 +1041,7 @@ function showCartUI() {
             /* ===== SAVE ORDER ===== */
 
             try {
-              const response = await fetch("https://restaurant-backend-7i1c.onrender.com/save-order", {
+              const response = await fetch(`${API_BASE}/save-order`, {
                 method: "POST",
 
                 headers: {
@@ -1779,77 +1780,92 @@ sendMsg = function () {
   oldSendMsg();
 };
 
-function buildAdminLayout() {
-
+/* === BUILD SECOND EMPTY ADMIN COLUMN === */
+window.addEventListener("DOMContentLoaded", function () {
   const panel = document.getElementById("admin-panel");
-
   if (!panel) return;
 
-  if (document.querySelector(".admin-columns")) return;
+  /* skip if already applied */
+  if (panel.querySelector(".admin-columns")) return;
 
   const children = [...panel.children];
 
-  const wrapper = document.createElement("div");
-  wrapper.className = "admin-columns";
+  /* keep close button outside layout */
+  let closeBtn = null;
+  children.forEach((el) => {
+    if (el.tagName === "BUTTON" && el.innerText === "✕") closeBtn = el;
+  });
+
+  const container = document.createElement("div");
+  container.className = "admin-columns";
 
   const left = document.createElement("div");
   left.className = "admin-col-left";
 
   const right = document.createElement("div");
   right.className = "admin-col-right";
+  right.innerHTML = ""; // empty column
 
-  children.forEach(el => {
-    left.appendChild(el);
+  children.forEach((el) => {
+    if (el !== closeBtn) {
+      left.appendChild(el);
+    }
   });
 
-  wrapper.appendChild(left);
-  wrapper.appendChild(right);
+  container.appendChild(left);
+  container.appendChild(right);
 
-  panel.innerHTML = "";
-  panel.appendChild(wrapper);
-}
+  panel.appendChild(container);
+});
 
-buildAdminLayout();
-
-let adminMenuCache = {};
-
-async function loadAdminMenu() {
+function getAdminMenu() {
+  const data = localStorage.getItem("adminMenuData");
+  if (!data) return {};
   try {
-    const res = await fetch("https://restaurant-backend-7i1c.onrender.com/menu");
-
-    adminMenuCache = await res.json();
-
-    if (!adminMenuCache || typeof adminMenuCache !== "object") {
-      adminMenuCache = {};
-    }
-
+    return JSON.parse(data);
   } catch (e) {
-    console.error("menu load error", e);
-    adminMenuCache = {};
+    return {};
   }
 }
 
-async function saveAdminMenu(data) {
-  adminMenuCache = data;
+function saveAdminMenu(data) {
+  localStorage.setItem("adminMenuData", JSON.stringify(data));
 
+  fetch(`${API_BASE}/save-menu`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  }).catch(console.error);
+}
+
+async function loadMenuFromBackend() {
   try {
-    await fetch("https://restaurant-backend-7i1c.onrender.com/save-menu", {
-      method: "POST",
+    const res = await fetch(`${API_BASE}/menu`);
 
-      headers: {
-        "Content-Type": "application/json",
-      },
+    if (!res.ok) return;
 
-      body: JSON.stringify(data),
-    });
+    const data = await res.json();
+
+    localStorage.setItem(
+      "adminMenuData",
+      JSON.stringify(data)
+    );
+
+    syncMenuWithOrderSystem();
+
+    if (typeof renderAdminTable === "function") {
+      renderAdminTable();
+    }
 
   } catch (e) {
-    console.error("menu save error", e);
+    console.error(e);
   }
 }
 
 function syncMenuWithOrderSystem() {
-  const data = adminMenuCache;
+  const data = getAdminMenu();
 
   /* clear all existing categories in order system */
   for (const k in ORDER_CATEGORIES) {
@@ -1879,23 +1895,14 @@ function syncMenuWithOrderSystem() {
   });
 }
 
+syncMenuWithOrderSystem();
+loadMenuFromBackend();
+
 let selectedCategory = null;
 
-window.addEventListener("DOMContentLoaded", async function () {
-
-  await loadAdminMenu();
-
-  syncMenuWithOrderSystem();
-
-  /* wait until columns exist */
-  requestAnimationFrame(() => {
-
-    const rightCol = document.querySelector(".admin-col-right");
-
-    if (!rightCol) {
-      console.error("admin-col-right not found");
-      return;
-    }
+window.addEventListener("DOMContentLoaded", function () {
+  const rightCol = document.querySelector(".admin-col-right");
+  if (!rightCol) return;
 
   /* ===== ADMIN TABS ===== */
 
@@ -1985,7 +1992,7 @@ window.addEventListener("DOMContentLoaded", async function () {
     const name = catInput.value.trim().toLowerCase();
     if (!name) return;
 
-    const data = adminMenuCache;
+    const data = getAdminMenu();
     if (!data[name]) {
       data[name] = [];
       saveAdminMenu(data);
@@ -2024,13 +2031,10 @@ window.addEventListener("DOMContentLoaded", async function () {
   menuContainer.appendChild(wrapper);
 
   renderAdminTable();
-
-  });
-
 });
 
-function renderAdminTable() {
-  const data = adminMenuCache;
+ {
+  const data = getAdminMenu();
 
   const catCol = document.getElementById("cat-col");
   const prodCol = document.getElementById("prod-col");
@@ -2064,7 +2068,7 @@ function renderAdminTable() {
 
     del.onclick = function (e) {
       e.stopPropagation();
-      const d = adminMenuCache;
+      const d = getAdminMenu();
       delete d[cat];
       saveAdminMenu(d);
       if (selectedCategory === cat) selectedCategory = null;
@@ -2111,7 +2115,7 @@ function renderAdminTable() {
     del.style.padding = "2px 6px";
 
     del.onclick = function () {
-      const d = adminMenuCache;
+      const d = getAdminMenu();function renderAdminTable()
       d[selectedCategory].splice(i, 1);
       saveAdminMenu(d);
       renderAdminTable();
@@ -2188,7 +2192,7 @@ function renderAdminTable() {
       const n = name.value.trim();
       if (!n) return;
 
-      const d = adminMenuCache;
+      const d = getAdminMenu();
 
       if (sizeToggle.checked) {
         const s = small.value.trim();
@@ -2227,7 +2231,7 @@ function renderAdminTable() {
 
 async function askAI(text) {
   try {
-    const res = await fetch("https://restaurant-backend-7i1c.onrender.com/ai", {
+    const res = await fetch(`${API_BASE}/ai`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message: text }),
@@ -2278,7 +2282,7 @@ async function renderOrdersAdmin() {
   let orders = [];
 
   try {
-    const res = await fetch("https://restaurant-backend-7i1c.onrender.com/orders");
+    const res = await fetch(`${API_BASE}/orders`);
 
     orders = await res.json();
     const currentJSON = JSON.stringify(orders);
@@ -2523,7 +2527,7 @@ async function renderOrdersAdmin() {
 
 async function updateOrderStatus(orderId, newStatus) {
   try {
-    await fetch("https://restaurant-backend-7i1c.onrender.com/update-order-status", {
+    await fetch(`${API_BASE}/update-order-status`, {
       method: "POST",
 
       headers: {
