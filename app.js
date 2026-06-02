@@ -1861,6 +1861,7 @@ async function loadMenuFromBackend() {
 }
 
 function syncMenuWithOrderSystem() {
+  console.log("ADMIN MENU DATA:", getAdminMenu());
   const data = getAdminMenu();
 
   /* clear all existing categories in order system */
