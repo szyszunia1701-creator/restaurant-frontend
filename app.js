@@ -1831,16 +1831,7 @@ function getAdminMenu() {
 function saveAdminMenu(data) {
   localStorage.setItem("adminMenuData", JSON.stringify(data));
 
-  /* stary zapis - backup */
-  fetch(`${API_BASE}/save-menu`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data),
-  }).catch(console.error);
-
-  /* nowy zapis - Google Sheets */
+  /* główny zapis - Google Sheets */
   fetch(`${API_BASE}/save-menu-sheets`, {
     method: "POST",
     headers: {
