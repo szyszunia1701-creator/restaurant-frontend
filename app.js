@@ -1466,57 +1466,6 @@ function handleOrder(text) {
     return;
   }
 
-  if (orderStep === "items") {
-    const n = parseInt(text);
-
-    const items = ORDER_CATEGORIES[orderCategory];
-
-    if (!n || n < 1 || n > items.length) {
-      addMsg("❗ Wpisz numer dania.", "bot");
-      return;
-    }
-
-    orderCart.push(items[n - 1]);
-
-    addMsg(
-      "✅ Dodano do koszyka:\n\n" +
-        items[n - 1] +
-        "\n\n💰 Aktualna suma: " +
-        getCartTotal() +
-        " zł",
-      "bot",
-    );
-
-    const addMoreBtn = document.createElement("button");
-    addMoreBtn.textContent = "➕ Dodaj kolejny produkt";
-    addMoreBtn.style.marginTop = "6px";
-    addMoreBtn.style.padding = "6px 10px";
-    addMoreBtn.style.border = "none";
-    addMoreBtn.style.borderRadius = "10px";
-    addMoreBtn.style.cursor = "pointer";
-    addMoreBtn.onclick = startOrder;
-    messages.appendChild(addMoreBtn);
-    updateCartBar();
-
-    const q = document.createElement("div");
-    q.className = "quick";
-
-    const more = document.createElement("button");
-    more.textContent = "➕ Dodaj coś jeszcze";
-    more.onclick = startOrder;
-
-    const cart = document.createElement("button");
-    cart.textContent = "🛒 Koszyk";
-    cart.onclick = showCart;
-
-    q.appendChild(more);
-    q.appendChild(cart);
-
-    messages.appendChild(q);
-
-    return;
-  }
-
   if (orderStep === "address") {
     orderData.address = text;
     orderStep = "phone";
@@ -1809,8 +1758,8 @@ sendMsg = function () {
     return;
   }
 
-  /* during order only numbers go to order handler */
-  if (orderStep && /^[0-9]+$/.test(text)) {
+  /* only custom amount of poriotns uses type amount option */
+  if (orderStep === "customQty" && /^[0-9]+$/.test(text)) {
     input.value = "";
     addMsg(text, "user");
     handleOrder(text);
