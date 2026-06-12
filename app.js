@@ -274,7 +274,7 @@ function handleCancel(text) {
   }
 }
 
-function handleReservation(t) {
+async function handleReservation(t) {
   if (reservationStep === "date") {
     if (!isValidDate(t)) {
       addMsg("❗ Podaj poprawną datę (np. 12.03 lub jutro).", "bot");
@@ -332,6 +332,30 @@ function handleReservation(t) {
     }
     reservation.phone = t;
     reservationStep = null;
+
+    try {
+      const response = await fetch(`${API_BASE}/save-reservation`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          date: reservation.date,
+          time: reservation.time,
+          people: reservation.people,
+          lastname: reservation.lastname,
+          phone: reservation.phone,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Błąd zapisu rezerwacji");
+      }
+    } catch (e) {
+      console.error(e);
+      addMsg("❌ Nie udało się zapisać rezerwacji. Spróbuj ponownie.", "bot");
+      return;
+    }
 
     addMsg(
       `✅ Rezerwacja przyjęta (demo):
