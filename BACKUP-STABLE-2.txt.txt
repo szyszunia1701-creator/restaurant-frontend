@@ -1,0 +1,7 @@
+Stable version
+AI working
+Orders working
+Google Sheets working
+Admin panel working
+Shared menu working
+Date: 2026-06-02
