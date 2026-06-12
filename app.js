@@ -234,6 +234,8 @@ function showMenu() {
 function startReservation() {
   resetReservation();
   cancelStep = null;
+  orderStep = null;
+  orderCategory = null;
   reservationStep = "date";
   addMsg("📅 Na jaki dzień chcesz zarezerwować stolik?", "bot");
 }
@@ -1783,6 +1785,21 @@ sendMsg = function () {
   const text = input.value;
   const lower = text.toLowerCase();
   const intent = detectIntent(lower);
+
+  /* rezerwacja i anulowanie mają pierwszeństwo przed zamówieniami */
+  if (reservationStep) {
+    input.value = "";
+    addMsg(text, "user");
+    handleReservation(text);
+    return;
+  }
+
+  if (cancelStep) {
+    input.value = "";
+    addMsg(text, "user");
+    handleCancel(text);
+    return;
+  }
 
   /* start order by text */
   if (intent === "order") {
