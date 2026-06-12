@@ -241,12 +241,15 @@ function startReservation() {
 }
 
 function startCancel() {
+  resetReservation();
+  orderStep = null;
+  orderCategory = null;
   cancelData = {};
   cancelStep = "lastname";
   addMsg("Aby anulować rezerwację, podaj nazwisko:", "bot");
 }
 
-function handleCancel(text) {
+async function handleCancel(text) {
   if (cancelStep === "lastname") {
     if (!isValidSurname(text)) {
       addMsg(
@@ -265,12 +268,45 @@ function handleCancel(text) {
       addMsg("❗ Podaj poprawny numer telefonu.", "bot");
       return;
     }
+
     cancelData.phone = text;
     cancelStep = null;
+
+    try {
+      const response = await fetch(`${API_BASE}/cancel-reservation`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          lastname: cancelData.lastname,
+          phone: cancelData.phone,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Błąd anulowania rezerwacji");
+      }
+
+      const data = await response.json();
+
+      if (!data.success) {
+        addMsg("❗ Nie znaleziono rezerwacji dla podanych danych.", "bot");
+        addQuick();
+        document.getElementById("chat-input").style.display = "flex";
+        return;
+      }
+    } catch (e) {
+      console.error(e);
+      addMsg("❌ Nie udało się anulować rezerwacji. Spróbuj ponownie.", "bot");
+      return;
+    }
+
     addMsg(
       "❌ Rezerwacja została anulowana. W czym mogę pomóc dalej? 🙂",
       "bot",
     );
+
     addQuick();
     document.getElementById("chat-input").style.display = "flex";
   }
