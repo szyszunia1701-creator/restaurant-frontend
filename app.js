@@ -1940,8 +1940,12 @@ window.addEventListener("DOMContentLoaded", function () {
   const ordersTab = document.createElement("button");
   ordersTab.textContent = "📦 Zamówienia";
 
+  const reservationsTab = document.createElement("button");
+  reservationsTab.textContent = "📅 Rezerwacje";
+
   tabs.appendChild(menuTab);
   tabs.appendChild(ordersTab);
+  tabs.appendChild(reservationsTab);
 
   rightCol.appendChild(tabs);
 
@@ -1957,36 +1961,63 @@ window.addEventListener("DOMContentLoaded", function () {
   ordersContainer.style.paddingRight = "6px";
   ordersContainer.style.display = "none";
 
+  const reservationsContainer = document.createElement("div");
+  reservationsContainer.id = "reservations-admin-container";
+  reservationsContainer.style.maxHeight = "600px";
+  reservationsContainer.style.overflowY = "auto";
+  reservationsContainer.style.paddingRight = "6px";
+  reservationsContainer.style.display = "none";
+
   rightCol.appendChild(menuContainer);
   rightCol.appendChild(ordersContainer);
+  rightCol.appendChild(reservationsContainer);
 
   /* tab switching */
 
   menuTab.onclick = function () {
-    menuContainer.style.display = "block";
-    ordersContainer.style.display = "none";
-  };
+  menuContainer.style.display = "block";
+  ordersContainer.style.display = "none";
+  reservationsContainer.style.display = "none";
+};
 
-  let ordersInterval = null;
+let ordersInterval = null;
+let reservationsInterval = null;
 
-  ordersTab.onclick = function () {
-    menuContainer.style.display = "none";
-    ordersContainer.style.display = "block";
+ordersTab.onclick = function () {
+  menuContainer.style.display = "none";
+  ordersContainer.style.display = "block";
+  reservationsContainer.style.display = "none";
 
-    renderOrdersAdmin();
+  renderOrdersAdmin();
 
-    /* usuń poprzedni interval */
-    if (ordersInterval) {
-      clearInterval(ordersInterval);
+  if (ordersInterval) {
+    clearInterval(ordersInterval);
+  }
+
+  ordersInterval = setInterval(() => {
+    if (ordersContainer.style.display === "block") {
+      renderOrdersAdmin();
     }
+  }, 5000);
+};
 
-    /* auto refresh */
-    ordersInterval = setInterval(() => {
-      if (ordersContainer.style.display === "block") {
-        renderOrdersAdmin();
-      }
-    }, 5000);
-  };
+reservationsTab.onclick = function () {
+  menuContainer.style.display = "none";
+  ordersContainer.style.display = "none";
+  reservationsContainer.style.display = "block";
+
+  renderReservationsAdmin();
+
+  if (reservationsInterval) {
+    clearInterval(reservationsInterval);
+  }
+
+  reservationsInterval = setInterval(() => {
+    if (reservationsContainer.style.display === "block") {
+      renderReservationsAdmin();
+    }
+  }, 5000);
+};
 
   const wrapper = document.createElement("div");
 
@@ -2543,6 +2574,105 @@ async function renderOrdersAdmin() {
 
       card.appendChild(header);
       card.appendChild(details);
+
+      container.appendChild(card);
+    });
+}
+
+let lastReservationsJSON = "";
+
+async function renderReservationsAdmin() {
+  const container = document.getElementById("reservations-admin-container");
+
+  if (!container) return;
+
+  let reservations = [];
+
+  try {
+    const res = await fetch(`${API_BASE}/reservations`);
+
+    reservations = await res.json();
+
+    const currentJSON = JSON.stringify(reservations);
+
+    if (currentJSON === lastReservationsJSON) {
+      return;
+    }
+
+    lastReservationsJSON = currentJSON;
+
+    container.innerHTML = "<h3>📅 Rezerwacje</h3>";
+  } catch (e) {
+    console.error(e);
+
+    container.innerHTML = `
+      <h3>📅 Rezerwacje</h3>
+      <div style="color:red;margin-top:10px;">
+        Błąd połączenia z backendem
+      </div>
+    `;
+
+    return;
+  }
+
+  if (!reservations.length) {
+    const empty = document.createElement("div");
+    empty.textContent = "Brak rezerwacji";
+    empty.style.color = "#666";
+
+    container.appendChild(empty);
+
+    return;
+  }
+
+  reservations
+    .slice()
+    .reverse()
+    .forEach((reservation) => {
+      const card = document.createElement("div");
+
+      card.style.background = "#fff";
+      card.style.border = "1px solid #ddd";
+      card.style.borderRadius = "12px";
+      card.style.marginBottom = "12px";
+      card.style.padding = "14px";
+
+      const statusColor =
+        reservation.status === "anulowana" ? "#fee2e2" : "#dcfce7";
+
+      card.innerHTML = `
+        <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;">
+          <div style="font-weight:600;">
+            📅 ${reservation.date} — ${reservation.time}
+          </div>
+
+          <div style="
+            font-size:13px;
+            padding:4px 10px;
+            border-radius:999px;
+            background:${statusColor};
+            white-space:nowrap;
+          ">
+            ${reservation.status}
+          </div>
+        </div>
+
+        <div style="margin-top:10px;">
+          👥 ${reservation.people} osób
+        </div>
+
+        <div style="margin-top:6px;">
+          👤 ${reservation.lastname}
+        </div>
+
+        <div style="margin-top:6px;">
+          📞 ${reservation.phone}
+        </div>
+
+        <div style="color:#777;font-size:12px;margin-top:10px;">
+          ${reservation.createdAt ? new Date(reservation.createdAt).toLocaleString() : ""}
+        </div>
+      `;
 
       container.appendChild(card);
     });
