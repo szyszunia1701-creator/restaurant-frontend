@@ -2787,26 +2787,29 @@ async function updateReservationStatus(reservation, newStatus) {
 
     const responseText = await response.text();
 
-    console.log("Reservation status update response:", {
-      status: response.status,
-      ok: response.ok,
-      responseText,
-      sentData: {
-        date: reservation.date,
-        time: reservation.time,
-        lastname: reservation.lastname,
-        phone: reservation.phone,
-        newStatus,
-      },
-    });
+    alert(
+      "DIAGNOSTYKA REZERWACJI\n\n" +
+        "Kod: " +
+        response.status +
+        "\nOK: " +
+        response.ok +
+        "\nOdpowiedź backendu: " +
+        responseText +
+        "\n\nWysłane dane:\n" +
+        JSON.stringify(
+          {
+            date: reservation.date,
+            time: reservation.time,
+            lastname: reservation.lastname,
+            phone: reservation.phone,
+            newStatus,
+          },
+          null,
+          2
+        )
+    );
 
     if (!response.ok) {
-      alert(
-        "Błąd zmiany statusu rezerwacji.\n\nKod: " +
-          response.status +
-          "\nOdpowiedź backendu: " +
-          responseText,
-      );
       return;
     }
 
@@ -2814,7 +2817,11 @@ async function updateReservationStatus(reservation, newStatus) {
     renderReservationsAdmin();
   } catch (e) {
     console.error(e);
-    alert("Błąd połączenia z backendem przy zmianie statusu rezerwacji.");
+
+    alert(
+      "Błąd połączenia z backendem przy zmianie statusu rezerwacji.\n\n" +
+        e.message
+    );
   }
 }
 
