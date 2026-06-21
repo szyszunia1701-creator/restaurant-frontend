@@ -2785,43 +2785,15 @@ async function updateReservationStatus(reservation, newStatus) {
       }),
     });
 
-    const responseText = await response.text();
-
-    alert(
-      "DIAGNOSTYKA REZERWACJI\n\n" +
-        "Kod: " +
-        response.status +
-        "\nOK: " +
-        response.ok +
-        "\nOdpowiedź backendu: " +
-        responseText +
-        "\n\nWysłane dane:\n" +
-        JSON.stringify(
-          {
-            date: reservation.date,
-            time: reservation.time,
-            lastname: reservation.lastname,
-            phone: reservation.phone,
-            newStatus,
-          },
-          null,
-          2
-        )
-    );
-
     if (!response.ok) {
-      return;
+      throw new Error("Błąd zmiany statusu rezerwacji");
     }
 
     lastReservationsJSON = "";
     renderReservationsAdmin();
   } catch (e) {
     console.error(e);
-
-    alert(
-      "Błąd połączenia z backendem przy zmianie statusu rezerwacji.\n\n" +
-        e.message
-    );
+    alert("Błąd zmiany statusu rezerwacji");
   }
 }
 
