@@ -2686,7 +2686,7 @@ async function renderReservationsAdmin() {
       const statusColor =
         reservation.status === "anulowana" ? "#fee2e2" : "#dcfce7";
 
-      card.innerHTML = `
+            card.innerHTML = `
         <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;">
           <div style="font-weight:600;">
             📅 ${reservation.date} — ${reservation.time}
@@ -2720,8 +2720,81 @@ async function renderReservationsAdmin() {
         </div>
       `;
 
+      const actions = document.createElement("div");
+      actions.style.display = "flex";
+      actions.style.gap = "8px";
+      actions.style.marginTop = "12px";
+
+      if (reservation.status === "do potwierdzenia") {
+        const confirmBtn = document.createElement("button");
+        confirmBtn.textContent = "✓ Potwierdź";
+        confirmBtn.style.background = "#22c55e";
+        confirmBtn.style.color = "#fff";
+        confirmBtn.style.border = "none";
+        confirmBtn.style.borderRadius = "10px";
+        confirmBtn.style.padding = "8px 10px";
+        confirmBtn.style.cursor = "pointer";
+
+        confirmBtn.onclick = function () {
+          updateReservationStatus(reservation, "potwierdzona");
+        };
+
+        actions.appendChild(confirmBtn);
+      }
+
+      if (reservation.status !== "anulowana") {
+        const cancelBtn = document.createElement("button");
+        cancelBtn.textContent = "✕ Anuluj";
+        cancelBtn.style.background = "#ef4444";
+        cancelBtn.style.color = "#fff";
+        cancelBtn.style.border = "none";
+        cancelBtn.style.borderRadius = "10px";
+        cancelBtn.style.padding = "8px 10px";
+        cancelBtn.style.cursor = "pointer";
+
+        cancelBtn.onclick = function () {
+          updateReservationStatus(reservation, "anulowana");
+        };
+
+        actions.appendChild(cancelBtn);
+      }
+
+      if (actions.children.length) {
+        card.appendChild(actions);
+      }
+
+      container.appendChild(card);
+
       container.appendChild(card);
     });
+}
+
+async function updateReservationStatus(reservation, newStatus) {
+  try {
+    const response = await fetch(`${API_BASE}/update-reservation-status`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        date: reservation.date,
+        time: reservation.time,
+        lastname: reservation.lastname,
+        phone: reservation.phone,
+        newStatus,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Błąd zmiany statusu rezerwacji");
+    }
+
+    lastReservationsJSON = "";
+    renderReservationsAdmin();
+  } catch (e) {
+    console.error(e);
+    alert("Błąd zmiany statusu rezerwacji");
+  }
 }
 
 async function updateOrderStatus(orderId, newStatus) {
