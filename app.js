@@ -389,6 +389,9 @@ async function handleReservation(t) {
       if (!response.ok) {
         throw new Error("Błąd zapisu rezerwacji");
       }
+
+      const data = await response.json();
+      reservation.reservationId = data.reservationId || "";
     } catch (e) {
       console.error(e);
       addMsg("❌ Nie udało się zapisać rezerwacji. Spróbuj ponownie.", "bot");
@@ -398,6 +401,7 @@ async function handleReservation(t) {
     addMsg(
       `✅ Rezerwacja przyjęta:
 
+        🔢 Numer rezerwacji: ${reservation.reservationId}
         📅 ${reservation.date}
         ⏰ ${reservation.time}
         👥 ${reservation.people} osób
@@ -1975,49 +1979,49 @@ window.addEventListener("DOMContentLoaded", function () {
   /* tab switching */
 
   menuTab.onclick = function () {
-  menuContainer.style.display = "block";
-  ordersContainer.style.display = "none";
-  reservationsContainer.style.display = "none";
-};
+    menuContainer.style.display = "block";
+    ordersContainer.style.display = "none";
+    reservationsContainer.style.display = "none";
+  };
 
-let ordersInterval = null;
-let reservationsInterval = null;
+  let ordersInterval = null;
+  let reservationsInterval = null;
 
-ordersTab.onclick = function () {
-  menuContainer.style.display = "none";
-  ordersContainer.style.display = "block";
-  reservationsContainer.style.display = "none";
+  ordersTab.onclick = function () {
+    menuContainer.style.display = "none";
+    ordersContainer.style.display = "block";
+    reservationsContainer.style.display = "none";
 
-  renderOrdersAdmin();
+    renderOrdersAdmin();
 
-  if (ordersInterval) {
-    clearInterval(ordersInterval);
-  }
-
-  ordersInterval = setInterval(() => {
-    if (ordersContainer.style.display === "block") {
-      renderOrdersAdmin();
+    if (ordersInterval) {
+      clearInterval(ordersInterval);
     }
-  }, 5000);
-};
 
-reservationsTab.onclick = function () {
-  menuContainer.style.display = "none";
-  ordersContainer.style.display = "none";
-  reservationsContainer.style.display = "block";
+    ordersInterval = setInterval(() => {
+      if (ordersContainer.style.display === "block") {
+        renderOrdersAdmin();
+      }
+    }, 5000);
+  };
 
-  renderReservationsAdmin();
+  reservationsTab.onclick = function () {
+    menuContainer.style.display = "none";
+    ordersContainer.style.display = "none";
+    reservationsContainer.style.display = "block";
 
-  if (reservationsInterval) {
-    clearInterval(reservationsInterval);
-  }
+    renderReservationsAdmin();
 
-  reservationsInterval = setInterval(() => {
-    if (reservationsContainer.style.display === "block") {
-      renderReservationsAdmin();
+    if (reservationsInterval) {
+      clearInterval(reservationsInterval);
     }
-  }, 5000);
-};
+
+    reservationsInterval = setInterval(() => {
+      if (reservationsContainer.style.display === "block") {
+        renderReservationsAdmin();
+      }
+    }, 5000);
+  };
 
   const wrapper = document.createElement("div");
 
@@ -2686,7 +2690,7 @@ async function renderReservationsAdmin() {
       const statusColor =
         reservation.status === "anulowana" ? "#fee2e2" : "#dcfce7";
 
-            card.innerHTML = `
+      card.innerHTML = `
         <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;">
           <div style="font-weight:600;">
             📅 ${reservation.date} — ${reservation.time}
@@ -2701,6 +2705,10 @@ async function renderReservationsAdmin() {
           ">
             ${reservation.status}
           </div>
+        </div>
+
+        <div style="margin-top:10px;font-weight:600;">
+          🔢 ${reservation.reservationId || "Brak numeru"}
         </div>
 
         <div style="margin-top:10px;">
@@ -2762,8 +2770,6 @@ async function renderReservationsAdmin() {
       if (actions.children.length) {
         card.appendChild(actions);
       }
-
-      container.appendChild(card);
 
       container.appendChild(card);
     });
