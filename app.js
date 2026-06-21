@@ -2326,6 +2326,67 @@ window.addEventListener("DOMContentLoaded", function () {
 
 /* ===== ADMIN LIVE ORDERS ===== */
 
+async function fetchJSONWithTimeout(url, timeoutMs = 7000) {
+  const controller = new AbortController();
+
+  const timeout = setTimeout(() => {
+    controller.abort();
+  }, timeoutMs);
+
+  try {
+    const response = await fetch(url, {
+      signal: controller.signal,
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      throw new Error("HTTP " + response.status);
+    }
+
+    return await response.json();
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function showAdminBackendError(container, title) {
+  container.innerHTML = `
+    <h3>${title}</h3>
+
+    <div style="
+      background:#fff3f3;
+      border:1px solid #ef4444;
+      color:#991b1b;
+      border-radius:12px;
+      padding:14px;
+      line-height:1.5;
+      margin-top:10px;
+    ">
+      <strong>⚠️ Backend / Render nie odpowiada.</strong><br>
+      Dane nie mogły zostać pobrane. Sprawdź, czy backend działa albo zrób redeploy Rendera.
+
+      <div style="margin-top:10px;font-size:13px;color:#7f1d1d;">
+        Test backendu: ${API_BASE}/health
+      </div>
+
+      <button
+        onclick="window.open('${API_BASE}/health', '_blank')"
+        style="
+          margin-top:10px;
+          padding:8px 12px;
+          border:none;
+          border-radius:10px;
+          background:#991b1b;
+          color:white;
+          cursor:pointer;
+        "
+      >
+        Sprawdź backend
+      </button>
+    </div>
+  `;
+}
+
 let lastOrdersJSON = "";
 let previousOrdersCount = 0;
 async function renderOrdersAdmin() {
@@ -2336,9 +2397,7 @@ async function renderOrdersAdmin() {
   let orders = [];
 
   try {
-    const res = await fetch(`${API_BASE}/orders`);
-
-    orders = await res.json();
+    orders = await fetchJSONWithTimeout(`${API_BASE}/orders`);
     const currentJSON = JSON.stringify(orders);
 
     if (currentJSON === lastOrdersJSON) {
@@ -2363,12 +2422,7 @@ async function renderOrdersAdmin() {
   } catch (e) {
     console.error(e);
 
-    container.innerHTML += `
-    <div style="color:red;margin-top:10px;">
-    Błąd połączenia z backendem
-    </div>
-    `;
-
+    showAdminBackendError(container, "📦 Zamówienia");
     return;
   }
 
@@ -2589,9 +2643,7 @@ async function renderReservationsAdmin() {
   let reservations = [];
 
   try {
-    const res = await fetch(`${API_BASE}/reservations`);
-
-    reservations = await res.json();
+    reservations = await fetchJSONWithTimeout(`${API_BASE}/reservations`);
 
     const currentJSON = JSON.stringify(reservations);
 
@@ -2605,13 +2657,7 @@ async function renderReservationsAdmin() {
   } catch (e) {
     console.error(e);
 
-    container.innerHTML = `
-      <h3>📅 Rezerwacje</h3>
-      <div style="color:red;margin-top:10px;">
-        Błąd połączenia z backendem
-      </div>
-    `;
-
+    showAdminBackendError(container, "📅 Rezerwacje");
     return;
   }
 
