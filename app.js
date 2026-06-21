@@ -396,7 +396,7 @@ async function handleReservation(t) {
     }
 
     addMsg(
-      `✅ Rezerwacja przyjęta (demo):
+      `✅ Rezerwacja przyjęta:
 
         📅 ${reservation.date}
         ⏰ ${reservation.time}
@@ -1516,7 +1516,7 @@ function handleOrder(text) {
 
     let orderNumber = Math.floor(1000 + Math.random() * 9000);
 
-    let msg = "✅ Zamówienie przyjęte (demo)\n\n";
+    let msg = "✅ Zamówienie przyjęte\n\n";
     msg += "📦 Numer zamówienia: #" + orderNumber + "\n\n";
 
     orderCart.forEach((i) => {
