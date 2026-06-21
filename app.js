@@ -2785,15 +2785,36 @@ async function updateReservationStatus(reservation, newStatus) {
       }),
     });
 
+    const responseText = await response.text();
+
+    console.log("Reservation status update response:", {
+      status: response.status,
+      ok: response.ok,
+      responseText,
+      sentData: {
+        date: reservation.date,
+        time: reservation.time,
+        lastname: reservation.lastname,
+        phone: reservation.phone,
+        newStatus,
+      },
+    });
+
     if (!response.ok) {
-      throw new Error("Błąd zmiany statusu rezerwacji");
+      alert(
+        "Błąd zmiany statusu rezerwacji.\n\nKod: " +
+          response.status +
+          "\nOdpowiedź backendu: " +
+          responseText,
+      );
+      return;
     }
 
     lastReservationsJSON = "";
     renderReservationsAdmin();
   } catch (e) {
     console.error(e);
-    alert("Błąd zmiany statusu rezerwacji");
+    alert("Błąd połączenia z backendem przy zmianie statusu rezerwacji.");
   }
 }
 
