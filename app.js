@@ -2777,16 +2777,18 @@ async function renderReservationsAdmin() {
 
 async function updateReservationStatus(reservation, newStatus) {
   try {
+    if (!reservation.reservationId) {
+      alert("Ta rezerwacja nie ma numeru ID. Utwórz nową rezerwację albo zostaw ją bez zmiany statusu.");
+      return;
+    }
+
     const response = await fetch(`${API_BASE}/update-reservation-status`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        date: reservation.date,
-        time: reservation.time,
-        lastname: reservation.lastname,
-        phone: reservation.phone,
+        reservationId: reservation.reservationId,
         newStatus,
       }),
     });
