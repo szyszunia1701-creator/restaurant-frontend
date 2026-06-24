@@ -444,3 +444,127 @@ padding-right:4px;
             cursor: pointer;
             font-size: 13px;
         }
+
+/* ===== START MESSAGE FULL WIDTH ONLY ===== */
+
+#chat-messages > .msg.bot:first-child {
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+    /* tylko pierwsze przyciski pod wiadomością startową */
+    #chat-messages > .msg.bot:first-child + .quick {
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        box-sizing: border-box;
+    }
+
+        /* tylko przyciski startowe */
+        #chat-messages > .msg.bot:first-child + .quick button {
+            flex: 1 1 calc(50% - 8px);
+            min-width: 145px;
+            box-sizing: border-box;
+            text-align: center;
+            transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+            animation: quickStartIn 0.35s ease both;
+        }
+
+            #chat-messages > .msg.bot:first-child + .quick button:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
+                background: #f8f8f8;
+            }
+
+@keyframes quickStartIn {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===== ADMIN LOGIN CENTER FIX ===== */
+
+#admin-login {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 320px;
+    max-width: calc(100vw - 32px);
+    padding: 28px 24px 24px;
+    box-sizing: border-box;
+    z-index: 30000;
+}
+
+    /* czarny X w prawym górnym rogu okna logowania */
+    #admin-login > button:first-child {
+        position: absolute !important;
+        top: 10px !important;
+        right: 10px !important;
+        width: 28px !important;
+        height: 28px !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        background: transparent !important;
+        color: #000 !important;
+        border: none !important;
+        border-radius: 50% !important;
+        font-size: 20px !important;
+        font-weight: 700;
+        line-height: 1;
+        cursor: pointer;
+        z-index: 2;
+    }
+
+        #admin-login > button:first-child:hover {
+            background: rgba(0, 0, 0, 0.08) !important;
+        }
+
+    /* ===== ADMIN LOGIN INPUT WIDTH FIX ===== */
+
+    #admin-login input,
+    #admin-login button:not(:first-child) {
+        box-sizing: border-box;
+        width: 100% !important;
+    }
+
+/* ===== CHATBOT LOGO ANIMATION + HEADER LOGO ===== */
+
+/* animacja głównej ikonki chatbota */
+#chat-toggle img {
+    animation: chatbotFloat 3.2s ease-in-out infinite;
+    filter: drop-shadow(0 12px 18px rgba(0, 0, 0, 0.28));
+    transform-origin: center;
+}
+
+#chat-toggle:hover img {
+    animation-play-state: paused;
+    transform: scale(1.06) rotate(-1deg);
+    filter: drop-shadow(0 16px 24px rgba(0, 0, 0, 0.35));
+}
+
+@keyframes chatbotFloat {
+    0% {
+        transform: translateY(0) rotate(0deg);
+    }
+
+    50% {
+        transform: translateY(-8px) rotate(-1deg);
+    }
+
+    100% {
+        transform: translateY(0) rotate(0deg);
+    }
+}
+
