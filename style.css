@@ -1437,3 +1437,479 @@ body::after {
     padding-left: 96px !important;
   }
 }
+
+/* =========================================================
+   VISUAL POLISH V3 – poprawki po drugim teście użytkownika
+   Cel: logo większe, koszyk jak przed visualem, kolorystyka
+   ciemny zielony / czerwony / kremowy, poprawki admina.
+   Tylko CSS – bez zmian w logice JS.
+   ========================================================= */
+
+:root {
+  --brand-color: #8f1f1b;
+  --brand-dark: #123625;
+  --brand-deep: #10281d;
+  --brand-red: #9f2d24;
+  --brand-gold: #cfa34b;
+  --brand-cream: #fbf3e5;
+  --brand-green: #173f2b;
+  --ink: #1e1914;
+  --muted: #74675d;
+  --line: rgba(23, 63, 43, 0.14);
+}
+
+body {
+  background:
+    radial-gradient(circle at 18% 18%, rgba(207, 163, 75, 0.18), transparent 30%),
+    radial-gradient(circle at 82% 12%, rgba(23, 63, 43, 0.34), transparent 34%),
+    linear-gradient(115deg, rgba(16, 40, 29, 0.66), rgba(143, 31, 27, 0.24) 48%, rgba(16, 40, 29, 0.72)),
+    url("wrb.png") center top / cover no-repeat !important;
+}
+
+body > h2::after {
+  background: rgba(23, 63, 43, 0.72) !important;
+  color: #fff7ed !important;
+  border-color: rgba(251, 243, 229, 0.35) !important;
+}
+
+/* ===== launcher: bardzo duże logo bez białego tła ===== */
+#chat-toggle {
+  right: -86px !important;
+  bottom: 2px !important;
+  width: 540px !important;
+  height: 245px !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  display: block !important;
+  overflow: visible !important;
+  animation: launcherFloat 4s ease-in-out infinite !important;
+}
+
+#chat-toggle::before,
+#chat-toggle::after {
+  content: none !important;
+  display: none !important;
+}
+
+#chat-toggle img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  display: block !important;
+  filter: drop-shadow(0 24px 30px rgba(0, 0, 0, 0.32)) !important;
+}
+
+#chat-toggle:hover {
+  transform: translateY(-5px) scale(1.025) !important;
+  box-shadow: none !important;
+}
+
+#chat-hint {
+  right: 268px !important;
+  bottom: 186px !important;
+  background: rgba(251, 243, 229, 0.96) !important;
+  border-color: rgba(23, 63, 43, 0.16) !important;
+}
+
+/* ===== chat: ciemny zielony + czerwony + krem ===== */
+#chat-box {
+  width: min(450px, calc(100vw - 36px)) !important;
+  background: rgba(251, 243, 229, 0.92) !important;
+  border: 1px solid rgba(251, 243, 229, 0.62) !important;
+  box-shadow: 0 30px 90px rgba(16, 40, 29, 0.36) !important;
+}
+
+#chat-header {
+  min-height: 90px !important;
+  padding: 18px 58px 18px 136px !important;
+  background:
+    radial-gradient(circle at 80% 0%, rgba(207, 163, 75, 0.24), transparent 38%),
+    linear-gradient(135deg, #10281d 0%, #173f2b 42%, #8f1f1b 100%) !important;
+  color: #fffaf0 !important;
+  font-size: 16px !important;
+}
+
+#chat-header::before {
+  content: "" !important;
+  left: 18px !important;
+  width: 106px !important;
+  height: 78px !important;
+  border-radius: 0 !important;
+  background: url("logo-wloska-rozmowa.png") center / contain no-repeat !important;
+  box-shadow: none !important;
+  filter: drop-shadow(0 10px 12px rgba(0, 0, 0, 0.22));
+}
+
+#chat-header::after {
+  left: 136px !important;
+  bottom: 14px !important;
+  content: "online • rezerwacje i zamówienia" !important;
+  color: rgba(255, 250, 240, 0.78) !important;
+}
+
+#chat-close {
+  top: 18px !important;
+  right: 16px !important;
+  background: rgba(251, 243, 229, 0.14) !important;
+  color: #fffaf0 !important;
+}
+
+#chat-messages {
+  padding: 14px 12px !important;
+  background:
+    radial-gradient(circle at top right, rgba(207, 163, 75, 0.12), transparent 32%),
+    linear-gradient(180deg, rgba(251, 243, 229, 0.98), rgba(255, 255, 255, 0.9)) !important;
+}
+
+.user {
+  background: linear-gradient(135deg, #173f2b, #8f1f1b) !important;
+  color: #fffaf0 !important;
+}
+
+.bot {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border-color: rgba(23, 63, 43, 0.11) !important;
+}
+
+/* wiadomości dalej pełna szerokość */
+.msg {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* quick buttons: pełniejsza szerokość, ten sam porządek, animacja */
+.quick {
+  width: 100% !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+}
+
+.quick button {
+  flex: 1 1 calc(50% - 8px) !important;
+  min-width: 145px !important;
+  justify-content: center !important;
+  min-height: 42px !important;
+  border-radius: 16px !important;
+  background: linear-gradient(145deg, #fffdf8, #fbf3e5) !important;
+  border: 1px solid rgba(23, 63, 43, 0.16) !important;
+  color: #173f2b !important;
+  box-shadow: 0 10px 20px rgba(16, 40, 29, 0.08) !important;
+  animation: quickButtonPop 0.34s ease both;
+}
+
+.quick button:hover {
+  background: linear-gradient(145deg, #fbf3e5, #fff) !important;
+  color: #8f1f1b !important;
+  border-color: rgba(143, 31, 27, 0.24) !important;
+  transform: translateY(-2px) scale(1.015) !important;
+}
+
+.quick button:nth-child(2) { animation-delay: 0.035s; }
+.quick button:nth-child(3) { animation-delay: 0.07s; }
+.quick button:nth-child(4) { animation-delay: 0.105s; }
+.quick button:nth-child(5) { animation-delay: 0.14s; }
+
+@keyframes quickButtonPop {
+  from { opacity: 0; transform: translateY(8px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+
+/* przycisk powrót – już nie nad tekstem */
+.msg:has(.back-btn) {
+  display: block !important;
+  min-height: 104px !important;
+  padding: 58px 14px 14px !important;
+  text-align: center !important;
+}
+
+.back-btn {
+  position: absolute !important;
+  left: 14px !important;
+  top: 14px !important;
+  transform: none !important;
+  width: auto !important;
+  min-width: 86px !important;
+  height: 36px !important;
+  margin: 0 !important;
+  background: #fbf3e5 !important;
+  color: #173f2b !important;
+  border: 1px solid rgba(23, 63, 43, 0.16) !important;
+}
+
+/* produkty neutralne: bez pizzy, pasuje też do napojów */
+.product-card {
+  background:
+    linear-gradient(90deg, rgba(23, 63, 43, 0.1) 0 5px, transparent 5px),
+    radial-gradient(circle at 100% 0%, rgba(207, 163, 75, 0.14), transparent 36%),
+    linear-gradient(145deg, #fffdf8, #f8efe0) !important;
+  border-color: rgba(23, 63, 43, 0.13) !important;
+}
+
+.product-card::before {
+  content: none !important;
+  display: none !important;
+}
+
+.product-name {
+  color: #173f2b !important;
+}
+
+.product-price {
+  background: rgba(143, 31, 27, 0.08) !important;
+  color: #8f1f1b !important;
+}
+
+/* ===== koszyk: belka jak przed visualem, nie za wysoko ===== */
+#bottom-cart-panel {
+  bottom: -20px !important;
+  height: 330px !important;
+  transform: translateY(255px) !important;
+  border-top-left-radius: 18px !important;
+  border-top-right-radius: 18px !important;
+  background:
+    linear-gradient(135deg, rgba(251, 243, 229, 0.98), rgba(23, 63, 43, 0.92) 52%, rgba(143, 31, 27, 0.9)) !important;
+}
+
+#bottom-cart-panel.open {
+  transform: translateY(0) !important;
+}
+
+#bottom-cart-bar {
+  min-height: 0 !important;
+  padding: 8px 0 !important;
+  border-bottom-left-radius: 18px !important;
+  border-bottom-right-radius: 18px !important;
+  background: linear-gradient(135deg, #173f2b, #8f1f1b) !important;
+}
+
+#bottom-cart-panel > div:last-child {
+  height: 210px !important;
+  overflow: auto !important;
+}
+
+#bottom-cart-items > div,
+#bottom-cart-total {
+  color: #fffaf0 !important;
+}
+
+/* ===== admin: close X, checkbox, upload X, dodawanie kategorii/produktu ===== */
+#admin-panel {
+  overflow: auto !important;
+  border: 1px solid rgba(251, 243, 229, 0.7) !important;
+}
+
+#admin-panel::before {
+  background: linear-gradient(135deg, #173f2b, #8f1f1b) !important;
+}
+
+#admin-panel > button[onclick="closeAdminPanel()"] {
+  position: absolute !important;
+  top: 12px !important;
+  right: 12px !important;
+  width: 34px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  padding: 0 !important;
+  border-radius: 999px !important;
+  background: #173f2b !important;
+  color: #fffaf0 !important;
+  z-index: 100000 !important;
+  display: grid !important;
+  place-items: center !important;
+  box-shadow: 0 8px 18px rgba(16, 40, 29, 0.26) !important;
+}
+
+.admin-col-left label input[type="checkbox"] {
+  width: 18px !important;
+  height: 18px !important;
+  min-height: 18px !important;
+  flex: 0 0 18px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  accent-color: #173f2b;
+}
+
+.admin-col-left label {
+  align-items: center !important;
+}
+
+#sandwich-preview button,
+.menuAdminPreview button,
+#admin-panel button[style*="border-radius: 50%"] {
+  width: 22px !important;
+  height: 22px !important;
+  min-height: 22px !important;
+  padding: 0 !important;
+  border-radius: 999px !important;
+  display: grid !important;
+  place-items: center !important;
+  line-height: 1 !important;
+  background: #173f2b !important;
+  color: #fffaf0 !important;
+  font-size: 13px !important;
+  box-shadow: 0 5px 12px rgba(16, 40, 29, 0.24) !important;
+}
+
+#admin-login button,
+#admin-panel button,
+#chat-input button,
+.category-bar button.active {
+  background: linear-gradient(135deg, #173f2b, #8f1f1b) !important;
+}
+
+#save-all {
+  background: linear-gradient(135deg, #173f2b, #2f7d4e) !important;
+}
+
+/* Dodawanie kategorii: przycisk równy z inputem */
+#menu-admin-container div:has(> input[placeholder="Nowa kategoria"]) {
+  align-items: stretch !important;
+}
+
+#menu-admin-container input[placeholder="Nowa kategoria"] {
+  height: 44px !important;
+  min-height: 44px !important;
+  margin-bottom: 0 !important;
+}
+
+#menu-admin-container div:has(> input[placeholder="Nowa kategoria"]) button {
+  height: 44px !important;
+  min-height: 44px !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+/* Dodawanie produktu: układ w dwóch rzędach, bez poziomego przewijania */
+#prod-col > div:has(input[placeholder="nazwa"]) {
+  display: grid !important;
+  grid-template-columns: auto auto minmax(70px, 1fr) minmax(70px, 1fr) auto !important;
+  gap: 8px !important;
+  align-items: center !important;
+  width: 100% !important;
+  overflow: visible !important;
+  padding: 10px !important;
+  border-radius: 14px !important;
+  background: rgba(251, 243, 229, 0.62) !important;
+}
+
+#prod-col > div:has(input[placeholder="nazwa"]) input[placeholder="nazwa"] {
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+  flex: none !important;
+  margin-bottom: 0 !important;
+}
+
+#prod-col > div:has(input[placeholder="nazwa"]) input[type="checkbox"] {
+  grid-column: 1 !important;
+  width: 17px !important;
+  height: 17px !important;
+  min-height: 17px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  accent-color: #173f2b;
+}
+
+#prod-col > div:has(input[placeholder="nazwa"]) span {
+  grid-column: 2 !important;
+  white-space: nowrap !important;
+  font-size: 13px !important;
+  color: #173f2b !important;
+  font-weight: 700 !important;
+}
+
+#prod-col > div:has(input[placeholder="nazwa"]) input[placeholder="cena"] {
+  grid-column: 3 / 5 !important;
+  width: 100% !important;
+  flex: none !important;
+  margin-bottom: 0 !important;
+}
+
+#prod-col > div:has(input[placeholder="nazwa"]) input[placeholder="mały"] {
+  grid-column: 3 !important;
+  width: 100% !important;
+  flex: none !important;
+  margin-bottom: 0 !important;
+}
+
+#prod-col > div:has(input[placeholder="nazwa"]) input[placeholder="duży"] {
+  grid-column: 4 !important;
+  width: 100% !important;
+  flex: none !important;
+  margin-bottom: 0 !important;
+}
+
+#prod-col > div:has(input[placeholder="nazwa"]) button {
+  grid-column: 5 !important;
+  width: 58px !important;
+  min-width: 58px !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  padding: 0 !important;
+}
+
+#prod-col {
+  overflow-x: hidden !important;
+}
+
+@media (max-width: 640px) {
+  #chat-toggle {
+    width: 360px !important;
+    height: 165px !important;
+    right: -74px !important;
+    bottom: 2px !important;
+  }
+
+  #chat-hint {
+    right: 172px !important;
+    bottom: 138px !important;
+  }
+
+  #chat-box {
+    right: 10px !important;
+    bottom: 124px !important;
+    width: calc(100vw - 20px) !important;
+    height: min(650px, calc(100vh - 145px)) !important;
+    min-height: 500px !important;
+  }
+
+  #chat-header {
+    min-height: 82px !important;
+    padding-left: 112px !important;
+  }
+
+  #chat-header::before {
+    width: 88px !important;
+    height: 64px !important;
+  }
+
+  #chat-header::after {
+    left: 112px !important;
+    font-size: 10px !important;
+  }
+
+  .quick button {
+    flex-basis: 100% !important;
+  }
+
+  #prod-col > div:has(input[placeholder="nazwa"]) {
+    grid-template-columns: auto auto 1fr auto !important;
+  }
+
+  #prod-col > div:has(input[placeholder="nazwa"]) input[placeholder="cena"],
+  #prod-col > div:has(input[placeholder="nazwa"]) input[placeholder="mały"],
+  #prod-col > div:has(input[placeholder="nazwa"]) input[placeholder="duży"] {
+    grid-column: 1 / -1 !important;
+  }
+
+  #prod-col > div:has(input[placeholder="nazwa"]) button {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+  }
+}
