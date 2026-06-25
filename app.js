@@ -1326,6 +1326,28 @@ function startOrder() {
   messages.appendChild(bar);
 }
 
+function parseOrderItemDisplay(item) {
+  const parts = item.split(" – ");
+  const rawName = parts[0] || item;
+  const price = parts[1] || "";
+
+  const sizeMatch = rawName.match(/\((mały|duży)\)$/i);
+
+  if (!sizeMatch) {
+    return {
+      name: rawName,
+      size: "",
+      price,
+    };
+  }
+
+  return {
+    name: rawName.replace(/\s*\((mały|duży)\)$/i, "").trim(),
+    size: sizeMatch[1],
+    price,
+  };
+}
+
 function showOrderItems() {
   orderStep = "items";
 
@@ -1346,22 +1368,29 @@ function showOrderItems() {
   container.className = "product-grid order-items";
 
   items.forEach((item) => {
-    const name = item.split(" – ")[0];
-    const price = item.split(" – ")[1];
+  const itemDisplay = parseOrderItemDisplay(item);
 
-    const card = document.createElement("div");
-    card.className = "product-card";
+  const card = document.createElement("div");
+  card.className = "product-card";
 
-    const n = document.createElement("div");
-    n.className = "product-name";
-    n.textContent = name;
+  const n = document.createElement("div");
+  n.className = "product-name";
+  n.textContent = itemDisplay.name;
 
-    const p = document.createElement("div");
-    p.className = "product-price";
-    p.textContent = price;
+  card.appendChild(n);
 
-    card.appendChild(n);
-    card.appendChild(p);
+  if (itemDisplay.size) {
+    const s = document.createElement("div");
+    s.className = "product-size";
+    s.textContent = "rozmiar: " + itemDisplay.size;
+    card.appendChild(s);
+  }
+
+  const p = document.createElement("div");
+  p.className = "product-price";
+  p.textContent = itemDisplay.price;
+
+  card.appendChild(p);
 
     card.onclick = function () {
       clearChat();
@@ -2827,3 +2856,4 @@ async function updateOrderStatus(orderId, newStatus) {
     alert("Błąd zmiany statusu");
   }
 }
+
