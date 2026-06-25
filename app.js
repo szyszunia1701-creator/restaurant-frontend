@@ -1368,27 +1368,46 @@ function showOrderItems() {
   container.className = "product-grid order-items";
 
   items.forEach((item) => {
-  const itemDisplay = parseOrderItemDisplay(item);
+  const parts = item.split(" – ");
+  let name = parts[0] || item;
+  const price = parts[1] || "";
+
+  let size = "";
+
+  if (name.includes("(mały)")) {
+    name = name.replace("(mały)", "").trim();
+    size = "mały";
+  }
+
+  if (name.includes("(duży)")) {
+    name = name.replace("(duży)", "").trim();
+    size = "duży";
+  }
 
   const card = document.createElement("div");
   card.className = "product-card";
 
   const n = document.createElement("div");
   n.className = "product-name";
-  n.textContent = itemDisplay.name;
+  n.textContent = name;
 
   card.appendChild(n);
 
-  if (itemDisplay.size) {
+  if (size) {
     const s = document.createElement("div");
     s.className = "product-size";
-    s.textContent = "rozmiar: " + itemDisplay.size;
+    s.textContent = "rozmiar: " + size;
+
+    s.style.fontSize = "12px";
+    s.style.color = "#777";
+    s.style.marginTop = "3px";
+
     card.appendChild(s);
   }
 
   const p = document.createElement("div");
   p.className = "product-price";
-  p.textContent = itemDisplay.price;
+  p.textContent = price;
 
   card.appendChild(p);
 
