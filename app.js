@@ -995,6 +995,7 @@ function showCartUI() {
           clearChat();
 
           const form = document.createElement("div");
+          form.className = "order-form";
           form.style.background = "#fff";
           form.style.padding = "14px";
           form.style.borderRadius = "14px";
@@ -1368,48 +1369,22 @@ function showOrderItems() {
   container.className = "product-grid order-items";
 
   items.forEach((item) => {
-  const parts = item.split(" – ");
-  let name = parts[0] || item;
-  const price = parts[1] || "";
+    const name = item.split(" – ")[0];
+    const price = item.split(" – ")[1];
 
-  let size = "";
+    const card = document.createElement("div");
+    card.className = "product-card";
 
-  if (name.includes("(mały)")) {
-    name = name.replace("(mały)", "").trim();
-    size = "mały";
-  }
+    const n = document.createElement("div");
+    n.className = "product-name";
+    n.textContent = name;
 
-  if (name.includes("(duży)")) {
-    name = name.replace("(duży)", "").trim();
-    size = "duży";
-  }
+    const p = document.createElement("div");
+    p.className = "product-price";
+    p.textContent = price;
 
-  const card = document.createElement("div");
-  card.className = "product-card";
-
-  const n = document.createElement("div");
-  n.className = "product-name";
-  n.textContent = name;
-
-  card.appendChild(n);
-
-  if (size) {
-    const s = document.createElement("div");
-    s.className = "product-size";
-    s.textContent = "rozmiar: " + size;
-
-    s.style.fontSize = "12px";
-    s.style.color = "#777";
-    s.style.marginTop = "3px";
-
-    card.appendChild(s);
-  }
-
-  const p = document.createElement("div");
-  p.className = "product-price";
-  p.textContent = price;
-
-  card.appendChild(p);
+    card.appendChild(n);
+    card.appendChild(p);
 
     card.onclick = function () {
       clearChat();
