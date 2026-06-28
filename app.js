@@ -978,7 +978,7 @@ function showCartUI() {
 
         /* ===== ORDER BUTTON AFTER SUMMARY ===== */
 
-        document.getElementById("chat-input").style.display = "flex";
+        document.getElementById("chat-input").style.display = "none";
 
         const orderNowBtn = document.createElement("button");
         orderNowBtn.textContent = "🧾 Złóż zamówienie";
@@ -994,6 +994,7 @@ function showCartUI() {
 
         orderNowBtn.onclick = function () {
           clearChat();
+          document.getElementById("chat-input").style.display = "none";
 
           const form = document.createElement("div");
           form.className = "order-form";

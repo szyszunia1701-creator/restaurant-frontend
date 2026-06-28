@@ -1576,3 +1576,37 @@ button {
     height: 8px;
   }
 }
+
+/* ===== ADMIN TABS SAME HEIGHT ===== */
+
+/* wszystkie zakładki w panelu admina mają tę samą minimalną wysokość */
+#menu-admin-container,
+#orders-admin-container,
+#reservations-admin-container {
+  min-height: 600px !important;
+  box-sizing: border-box !important;
+}
+
+/* menu też ma własny scroll, tak jak zamówienia i rezerwacje */
+#menu-admin-container {
+  overflow-y: auto !important;
+  padding-right: 6px !important;
+}
+
+/* prawa kolumna nie zmienia wysokości przy przełączaniu zakładek */
+.admin-col-right {
+  min-height: 680px !important;
+}
+
+/* ===== ADMIN TABS SAME HEIGHT MOBILE ===== */
+@media (max-width: 760px) {
+  #menu-admin-container,
+  #orders-admin-container,
+  #reservations-admin-container {
+    min-height: 520px !important;
+  }
+
+  .admin-col-right {
+    min-height: 600px !important;
+  }
+}
