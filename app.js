@@ -1350,6 +1350,27 @@ function parseOrderItemDisplay(item) {
   };
 }
 
+function parseOrderItemDisplay(item) {
+  const parts = item.split(" – ");
+  let rawName = parts[0] || item;
+  const price = parts[1] || "";
+
+  let size = "";
+
+  const sizeMatch = rawName.match(/\(([^)]+)\)\s*$/);
+
+  if (sizeMatch) {
+    size = sizeMatch[1].trim();
+    rawName = rawName.replace(/\s*\([^)]+\)\s*$/, "").trim();
+  }
+
+  return {
+    name: rawName,
+    size,
+    price,
+  };
+}
+
 function showOrderItems() {
   orderStep = "items";
 
@@ -1370,21 +1391,28 @@ function showOrderItems() {
   container.className = "product-grid order-items";
 
   items.forEach((item) => {
-    const name = item.split(" – ")[0];
-    const price = item.split(" – ")[1];
+    const itemDisplay = parseOrderItemDisplay(item);
 
     const card = document.createElement("div");
     card.className = "product-card";
 
     const n = document.createElement("div");
     n.className = "product-name";
-    n.textContent = name;
+    n.textContent = itemDisplay.name;
+
+    card.appendChild(n);
+
+    if (itemDisplay.size) {
+      const s = document.createElement("div");
+      s.className = "product-size";
+      s.textContent = "rozmiar: " + itemDisplay.size;
+      card.appendChild(s);
+    }
 
     const p = document.createElement("div");
     p.className = "product-price";
-    p.textContent = price;
+    p.textContent = itemDisplay.price;
 
-    card.appendChild(n);
     card.appendChild(p);
 
     card.onclick = function () {
@@ -2030,6 +2058,16 @@ window.addEventListener("DOMContentLoaded", function () {
 
   rightCol.appendChild(tabs);
 
+  function setActiveAdminTab(activeTab) {
+    [menuTab, ordersTab, reservationsTab].forEach((tab) => {
+      tab.classList.remove("active");
+    });
+
+    activeTab.classList.add("active");
+  }
+
+  setActiveAdminTab(menuTab);
+
   /* containers */
 
   const menuContainer = document.createElement("div");
@@ -2056,6 +2094,8 @@ window.addEventListener("DOMContentLoaded", function () {
   /* tab switching */
 
   menuTab.onclick = function () {
+    setActiveAdminTab(menuTab);
+
     menuContainer.style.display = "block";
     ordersContainer.style.display = "none";
     reservationsContainer.style.display = "none";
@@ -2065,6 +2105,8 @@ window.addEventListener("DOMContentLoaded", function () {
   let reservationsInterval = null;
 
   ordersTab.onclick = function () {
+    setActiveAdminTab(ordersTab);
+
     menuContainer.style.display = "none";
     ordersContainer.style.display = "block";
     reservationsContainer.style.display = "none";
@@ -2083,6 +2125,8 @@ window.addEventListener("DOMContentLoaded", function () {
   };
 
   reservationsTab.onclick = function () {
+    setActiveAdminTab(reservationsTab);
+
     menuContainer.style.display = "none";
     ordersContainer.style.display = "none";
     reservationsContainer.style.display = "block";

@@ -166,13 +166,13 @@ button {
   width: 100%;
   min-height: 44px;
   padding: 11px 14px;
-  background: linear-gradient(135deg, var(--brand-dark), #20523a);
+  background: linear-gradient(135deg, var(--brand-red), var(--brand-red-dark));
   color: #fff;
   border: none;
   border-radius: 13px;
   font-weight: 800;
   cursor: pointer;
-  box-shadow: 0 12px 22px rgba(20, 51, 38, 0.22);
+  box-shadow: 0 12px 22px rgba(139, 0, 0, 0.24);
   transition:
     transform 0.18s ease,
     box-shadow 0.18s ease,
@@ -181,8 +181,8 @@ button {
 
 #admin-login > button[onclick="loginAdmin()"]:hover {
   transform: translateY(-2px);
-  box-shadow: 0 16px 28px rgba(20, 51, 38, 0.28);
-  filter: brightness(1.04);
+  box-shadow: 0 16px 28px rgba(139, 0, 0, 0.32);
+  filter: brightness(1.08);
 }
 
 #admin-login > button[onclick="loginAdmin()"]:active {
@@ -386,6 +386,17 @@ button {
 .admin-col-right > div:first-child button:hover {
   background: var(--brand-dark) !important;
   color: #fff !important;
+}
+
+.admin-col-right > div:first-child button.active {
+  background: linear-gradient(
+    135deg,
+    var(--brand-red),
+    var(--brand-red-dark)
+  ) !important;
+  color: #fff !important;
+  border-color: var(--brand-red) !important;
+  box-shadow: 0 8px 18px rgba(139, 0, 0, 0.22) !important;
 }
 
 /* SAFE UI IMPROVEMENT – admin product column scroll */
@@ -931,6 +942,13 @@ button {
 .product-name {
   font-weight: 700;
   font-size: 14px;
+}
+
+.product-size {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 3px;
+  line-height: 1.2;
 }
 
 .product-price {
