@@ -1458,7 +1458,11 @@ button {
 .order-success-card {
   width: 100%;
   max-width: 100%;
-  min-height: 52dvh;
+  min-height: 0;
+  height: 100%;
+  max-height: 100%;
+
+  box-sizing: border-box;
 
   background: #fff;
   border-radius: 22px;
@@ -1492,6 +1496,8 @@ button {
   line-height: 1.5;
   color: var(--text-main);
   flex: 1;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .order-success-info {
