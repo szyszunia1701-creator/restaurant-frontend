@@ -1150,6 +1150,38 @@ button {
             font-size: 14px !important;
         }
 
+    /* ===== MOBILE ADMIN: RIGHT COLUMN FIRST ===== */
+
+    /* na telefonie najpierw pokazujemy zakładki: Menu / Zamówienia / Rezerwacje */
+    .admin-col-right {
+        order: 1 !important;
+    }
+
+    /* ustawienia restauracji, kanapka i zdjęcia idą pod spód */
+    .admin-col-left {
+        order: 2 !important;
+    }
+
+    /* zakładki admina przyklejone u góry prawej kolumny */
+    .admin-col-right > div:first-child {
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 30 !important;
+        background: rgba(20, 51, 38, 0.07) !important;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+
+    /* mniej zmarnowanego miejsca w panelu na telefonie */
+    .admin-col-left,
+    .admin-col-right {
+        padding: 14px !important;
+    }
+
+        .admin-col-left h3 {
+            margin-top: 10px !important;
+        }
+
 }
 
     /* 2. X przy zdjęciach kanapki i zdjęciach menu — idealnie okrągły i wycentrowany */
