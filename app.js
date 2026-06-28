@@ -886,6 +886,7 @@ function showCartUI() {
         /* ===== CREATE SUMMARY CONTAINER ===== */
 
         const summary = document.createElement("div");
+        summary.className = "order-summary-card";
         summary.style.background = "#fff";
         summary.style.padding = "14px";
         summary.style.borderRadius = "14px";
@@ -1154,8 +1155,7 @@ function showCartUI() {
             msg += "\n\n🔔 Status: do potwierdzenia";
             msg += "\n⏳ Czas realizacji: około 30 minut";
 
-            clearChat();
-            addMsg(msg, "bot");
+            showOrderSuccessScreen(msg);
 
             /* NOTIFICATION CARD */
             const orderCard = document.createElement("div");
@@ -1583,6 +1583,59 @@ function handleOrder(text) {
     orderData = {};
     updateCartBar();
   }
+}
+
+function showOrderSuccessScreen(msg) {
+  messages.innerHTML = "";
+
+  orderStep = null;
+  orderCategory = null;
+
+  hideCartUI();
+  document.getElementById("chat-input").style.display = "none";
+
+  const card = document.createElement("div");
+  card.className = "order-success-card";
+
+  const title = document.createElement("div");
+  title.className = "order-success-title";
+  title.textContent = "✅ Zamówienie przyjęte";
+
+  const body = document.createElement("div");
+  body.className = "order-success-body";
+  body.textContent = msg.replace("✅ Zamówienie przyjęte\n\n", "");
+
+  const info = document.createElement("div");
+  info.className = "order-success-info";
+  info.textContent = "Za chwilę wrócisz do ekranu startowego.";
+
+  const progress = document.createElement("div");
+  progress.className = "order-success-progress";
+
+  const progressBar = document.createElement("div");
+  progressBar.className = "order-success-progress-bar";
+
+  progress.appendChild(progressBar);
+
+  card.appendChild(title);
+  card.appendChild(body);
+  card.appendChild(info);
+  card.appendChild(progress);
+
+  messages.appendChild(card);
+  messages.scrollTop = 0;
+
+  setTimeout(function () {
+    card.classList.add("hide");
+  }, 6000);
+
+  setTimeout(function () {
+    messages.innerHTML = "";
+    addMsg(`Cześć 👋 Jestem asystentem ${RESTAURANT_NAME}.`, "bot");
+    addQuick();
+
+    document.getElementById("chat-input").style.display = "flex";
+  }, 6500);
 }
 
 function showCart() {
@@ -2801,7 +2854,9 @@ async function renderReservationsAdmin() {
 async function updateReservationStatus(reservation, newStatus) {
   try {
     if (!reservation.reservationId) {
-      alert("Ta rezerwacja nie ma numeru ID. Utwórz nową rezerwację albo zostaw ją bez zmiany statusu.");
+      alert(
+        "Ta rezerwacja nie ma numeru ID. Utwórz nową rezerwację albo zostaw ją bez zmiany statusu.",
+      );
       return;
     }
 
@@ -2850,4 +2905,3 @@ async function updateOrderStatus(orderId, newStatus) {
     alert("Błąd zmiany statusu");
   }
 }
-
