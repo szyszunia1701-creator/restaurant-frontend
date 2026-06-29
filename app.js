@@ -2158,6 +2158,16 @@ window.addEventListener("DOMContentLoaded", function () {
   let ordersInterval = null;
   let reservationsInterval = null;
 
+  function showAdminLoading(container, title, text) {
+    container.innerHTML = `
+    <h3>${title}</h3>
+    <div class="admin-loading">
+      <div class="admin-loading-spinner"></div>
+      <div>${text}</div>
+    </div>
+  `;
+  }
+
   ordersTab.onclick = function () {
     setActiveAdminTab(ordersTab);
 
@@ -2165,6 +2175,9 @@ window.addEventListener("DOMContentLoaded", function () {
     ordersContainer.style.display = "block";
     reservationsContainer.style.display = "none";
 
+    showAdminLoading(ordersContainer, "📦 Zamówienia", "Ładowanie zamówień...");
+
+    lastOrdersJSON = "";
     renderOrdersAdmin();
 
     if (ordersInterval) {
@@ -2185,6 +2198,13 @@ window.addEventListener("DOMContentLoaded", function () {
     ordersContainer.style.display = "none";
     reservationsContainer.style.display = "block";
 
+    showAdminLoading(
+      reservationsContainer,
+      "📅 Rezerwacje",
+      "Ładowanie rezerwacji...",
+    );
+
+    lastReservationsJSON = "";
     renderReservationsAdmin();
 
     if (reservationsInterval) {

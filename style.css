@@ -399,6 +399,42 @@ button {
   box-shadow: 0 8px 18px rgba(139, 0, 0, 0.22) !important;
 }
 
+.admin-loading {
+  min-height: 180px;
+  padding: 24px 18px;
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at top right, rgba(139, 0, 0, 0.1), transparent 35%),
+    linear-gradient(180deg, #ffffff, #fff8ee);
+  border: 1px solid rgba(20, 51, 38, 0.08);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.06);
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+
+  text-align: center;
+  color: var(--brand-dark);
+  font-weight: 800;
+}
+
+.admin-loading-spinner {
+  width: 34px;
+  height: 34px;
+  border: 4px solid rgba(139, 0, 0, 0.14);
+  border-top-color: var(--brand-red);
+  border-radius: 50%;
+  animation: adminLoadingSpin 0.8s linear infinite;
+}
+
+@keyframes adminLoadingSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* SAFE UI IMPROVEMENT – admin product column scroll */
 #prod-col {
   max-height: 420px;
