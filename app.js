@@ -2593,6 +2593,24 @@ let adminOrdersCache = [];
 let adminOrdersLoaded = false;
 let pendingMovingOrders = new Set();
 
+function getSeenOrderIds() {
+  try {
+    return JSON.parse(localStorage.getItem("seenOrderIds") || "[]");
+  } catch (e) {
+    return [];
+  }
+}
+
+function isOrderSeen(orderId) {
+  return getSeenOrderIds().includes(String(orderId));
+}
+
+function markOrderSeen(orderId) {
+  const ids = new Set(getSeenOrderIds());
+  ids.add(String(orderId));
+  localStorage.setItem("seenOrderIds", JSON.stringify([...ids]));
+}
+
 function getOrderBucket(order) {
   const status = order.status || "";
 
@@ -2610,6 +2628,11 @@ function getOrderBucket(order) {
 function renderOrderViewTabs(container) {
   const tabs = document.createElement("div");
   tabs.className = "order-view-tabs";
+
+  const label = document.createElement("span");
+  label.className = "order-view-label";
+  label.textContent = "Widok:";
+  tabs.appendChild(label);
 
   const views = [
     { id: "active", text: "Aktywne" },
@@ -2692,6 +2715,36 @@ function completeOrderWithFade(card, orderId) {
   moveOrderWithFade(card, orderId, "✅ ZREALIZOWANE");
 }
 
+function completeAllReadyOrdersWithFade(orderIds) {
+  const ids = orderIds.map(String).filter((id) => !pendingMovingOrders.has(id));
+
+  if (!ids.length) return;
+
+  ids.forEach((id) => {
+    pendingMovingOrders.add(id);
+
+    const card = document.querySelector(
+      '.admin-order-card[data-order-id="' + id + '"]',
+    );
+
+    if (card) {
+      card.classList.add("order-card-fade-out");
+    }
+  });
+
+  setTimeout(async function () {
+    await Promise.all(
+      ids.map((id) => updateOrderStatus(id, "✅ ZREALIZOWANE", true)),
+    );
+
+    ids.forEach((id) => pendingMovingOrders.delete(id));
+
+    lastOrdersJSON = "";
+    adminOrdersLoaded = false;
+    renderOrdersAdmin();
+  }, 2000);
+}
+
 async function renderOrdersAdmin(options = {}) {
   const container = document.getElementById("orders-admin-container");
 
@@ -2760,11 +2813,32 @@ async function renderOrdersAdmin(options = {}) {
     return;
   }
 
+  if (adminOrderView === "ready") {
+    const bulkBar = document.createElement("div");
+    bulkBar.className = "order-bulk-actions";
+
+    const count = visibleOrders.length;
+
+    const bulkBtn = document.createElement("button");
+    bulkBtn.className = "complete-all-ready-btn";
+    bulkBtn.textContent = "✅ Zrealizuj wszystko (" + count + ")";
+
+    bulkBtn.onclick = function () {
+      completeAllReadyOrdersWithFade(visibleOrders.map((order) => order.id));
+    };
+
+    bulkBar.appendChild(bulkBtn);
+    container.appendChild(bulkBar);
+  }
+
   visibleOrders
     .slice()
     .reverse()
     .forEach((order) => {
       const card = document.createElement("div");
+
+      card.className = "admin-order-card";
+      card.dataset.orderId = String(order.id);
 
       card.style.background = "#fff";
       card.style.border = "1px solid #ddd";
@@ -2783,9 +2857,20 @@ async function renderOrdersAdmin(options = {}) {
       header.style.cursor = "pointer";
       header.style.background = "#fafafa";
 
+      const isNewOrder =
+        adminOrderView === "active" &&
+        order.status === "do potwierdzenia" &&
+        !isOrderSeen(order.id);
+
       header.innerHTML = `
-    <div style="font-weight:600;">
-    📦 #${order.id}
+    <div style="
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-weight:600;
+    ">
+      📦 #${order.id}
+      ${isNewOrder ? '<span class="new-order-badge">NOWE!</span>' : ""}
     </div>
 
     <div style="
@@ -2959,6 +3044,13 @@ async function renderOrdersAdmin(options = {}) {
       /* ===== TOGGLE ===== */
 
       header.onclick = function () {
+        markOrderSeen(order.id);
+
+        const badge = header.querySelector(".new-order-badge");
+        if (badge) {
+          badge.classList.add("hide");
+          setTimeout(() => badge.remove(), 250);
+        }
         const isOpen = details.style.maxHeight !== "0px";
 
         if (isOpen) {
