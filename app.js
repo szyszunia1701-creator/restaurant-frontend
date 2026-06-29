@@ -2588,6 +2588,89 @@ function showAdminBackendError(container, title) {
 
 let lastOrdersJSON = "";
 let previousOrdersCount = 0;
+let adminOrderView = "active";
+
+function getOrderBucket(order) {
+  const status = order.status || "";
+
+  if (status === "🍕 GOTOWE DO ODBIORU") {
+    return "ready";
+  }
+
+  if (status === "✅ ZREALIZOWANE" || status === "❌ ANULOWANE") {
+    return "completed";
+  }
+
+  return "active";
+}
+
+function renderOrderViewTabs(container) {
+  const tabs = document.createElement("div");
+  tabs.className = "order-view-tabs";
+
+  const views = [
+    { id: "active", text: "Aktywne" },
+    { id: "ready", text: "Gotowe" },
+    { id: "completed", text: "Zrealizowane" },
+  ];
+
+  views.forEach((view) => {
+    const btn = document.createElement("button");
+    btn.textContent = view.text;
+    btn.className =
+      "order-view-tab" + (adminOrderView === view.id ? " active" : "");
+
+    btn.onclick = function () {
+      adminOrderView = view.id;
+      lastOrdersJSON = "";
+      renderOrdersAdmin();
+    };
+
+    tabs.appendChild(btn);
+  });
+
+  container.appendChild(tabs);
+}
+
+function showOrderEmptyState(container) {
+  const empty = document.createElement("div");
+  empty.className = "admin-empty-state";
+
+  if (adminOrderView === "active") {
+    empty.innerHTML = `
+      <div class="admin-empty-icon">📦</div>
+      <strong>Brak aktywnych zamówień</strong>
+      <span>Nowe zamówienia i zamówienia w przygotowaniu pojawią się tutaj.</span>
+    `;
+  }
+
+  if (adminOrderView === "ready") {
+    empty.innerHTML = `
+      <div class="admin-empty-icon">🍕</div>
+      <strong>Brak gotowych zamówień</strong>
+      <span>Zamówienia oznaczone jako gotowe do odbioru pojawią się tutaj.</span>
+    `;
+  }
+
+  if (adminOrderView === "completed") {
+    empty.innerHTML = `
+      <div class="admin-empty-icon">✅</div>
+      <strong>Brak zrealizowanych zamówień</strong>
+      <span>Zrealizowane i anulowane zamówienia trafią tutaj.</span>
+    `;
+  }
+
+  container.appendChild(empty);
+}
+
+function completeOrderWithFade(card, orderId) {
+  card.classList.add("order-card-fade-out");
+
+  setTimeout(function () {
+    updateOrderStatus(orderId, "✅ ZREALIZOWANE");
+  }, 2000);
+}
+
 async function renderOrdersAdmin() {
   const container = document.getElementById("orders-admin-container");
 
@@ -2597,7 +2680,10 @@ async function renderOrdersAdmin() {
 
   try {
     orders = await fetchJSONWithTimeout(`${API_BASE}/orders`);
-    const currentJSON = JSON.stringify(orders);
+    const currentJSON = JSON.stringify({
+      orders,
+      view: adminOrderView,
+    });
 
     if (currentJSON === lastOrdersJSON) {
       return;
@@ -2618,6 +2704,7 @@ async function renderOrdersAdmin() {
     previousOrdersCount = orders.length;
 
     container.innerHTML = "<h3>📦 Zamówienia</h3>";
+    renderOrderViewTabs(container);
   } catch (e) {
     console.error(e);
 
@@ -2625,17 +2712,16 @@ async function renderOrdersAdmin() {
     return;
   }
 
-  if (!orders.length) {
-    const empty = document.createElement("div");
-    empty.textContent = "Brak zamówień";
-    empty.style.color = "#666";
+  const visibleOrders = orders.filter((order) => {
+    return getOrderBucket(order) === adminOrderView;
+  });
 
-    container.appendChild(empty);
-
+  if (!visibleOrders.length) {
+    showOrderEmptyState(container);
     return;
   }
 
-  orders
+  visibleOrders
     .slice()
     .reverse()
     .forEach((order) => {
@@ -2765,6 +2851,29 @@ async function renderOrdersAdmin() {
         };
 
         actions.appendChild(done);
+      }
+
+      if (order.status === "🍕 GOTOWE DO ODBIORU") {
+        const complete = document.createElement("button");
+
+        complete.textContent = "✅ Zrealizuj";
+
+        complete.style.border = "none";
+        complete.style.padding = "6px 10px";
+        complete.style.borderRadius = "10px";
+        complete.style.cursor = "pointer";
+        complete.style.fontSize = "12px";
+        complete.style.background = "#16a34a";
+        complete.style.color = "#fff";
+        complete.style.fontWeight = "700";
+
+        complete.onclick = function (e) {
+          e.stopPropagation();
+
+          completeOrderWithFade(card, order.id);
+        };
+
+        actions.appendChild(complete);
       }
 
       /* ===== DETAILS ===== */
@@ -3017,6 +3126,7 @@ async function updateOrderStatus(orderId, newStatus) {
       }),
     });
 
+    lastOrdersJSON = "";
     renderOrdersAdmin();
   } catch (e) {
     console.error(e);

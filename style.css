@@ -1740,6 +1740,99 @@ button {
   accent-color: var(--brand-red);
 }
 
+.order-view-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 6px;
+  border-radius: 16px;
+  background: rgba(20, 51, 38, 0.06);
+}
+
+.order-view-tab {
+  flex: 1 1 0;
+  border: 1px solid rgba(20, 51, 38, 0.12) !important;
+  border-radius: 12px !important;
+  background: #fff !important;
+  color: var(--brand-dark) !important;
+  box-shadow: none !important;
+  padding: 10px 12px !important;
+  font-weight: 800 !important;
+}
+
+.order-view-tab.active {
+  background: linear-gradient(
+    135deg,
+    var(--brand-red),
+    var(--brand-red-dark)
+  ) !important;
+  color: #fff !important;
+  border-color: var(--brand-red) !important;
+  box-shadow: 0 8px 18px rgba(139, 0, 0, 0.2) !important;
+}
+
+.admin-empty-state {
+  min-height: 180px;
+  padding: 24px 18px;
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at top right, rgba(139, 0, 0, 0.1), transparent 35%),
+    linear-gradient(180deg, #ffffff, #fff8ee);
+  border: 1px solid rgba(20, 51, 38, 0.08);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.06);
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  text-align: center;
+  color: var(--brand-dark);
+}
+
+.admin-empty-state strong {
+  font-size: 17px;
+}
+
+.admin-empty-state span {
+  max-width: 360px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.admin-empty-icon {
+  font-size: 34px;
+  margin-bottom: 4px;
+}
+
+.order-card-fade-out {
+  animation: orderCardFadeOut 2s ease forwards;
+  pointer-events: none;
+}
+
+@keyframes orderCardFadeOut {
+  0% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    max-height: 500px;
+  }
+
+  70% {
+    opacity: 0;
+    transform: translateX(18px) scale(0.98);
+    max-height: 500px;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(28px) scale(0.96);
+    max-height: 0;
+    margin-bottom: 0;
+  }
+}
+
 /* ===== ADMIN TABS SAME HEIGHT ===== */
 
 /* wszystkie zakładki w panelu admina mają tę samą minimalną wysokość */
