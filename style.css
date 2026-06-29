@@ -1601,6 +1601,25 @@ button {
   }
 }
 
+.order-consent {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 8px !important;
+  font-size: 12px !important;
+  line-height: 1.35 !important;
+  color: var(--muted) !important;
+  margin: 2px 0 4px !important;
+}
+
+.order-consent input {
+  width: 16px !important;
+  min-width: 16px !important;
+  height: 16px !important;
+  min-height: 16px !important;
+  margin-top: 1px !important;
+  accent-color: var(--brand-red);
+}
+
 /* ===== ADMIN TABS SAME HEIGHT ===== */
 
 /* wszystkie zakładki w panelu admina mają tę samą minimalną wysokość */

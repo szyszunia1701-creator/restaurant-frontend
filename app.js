@@ -1006,6 +1006,21 @@ function showCartUI() {
           form.style.flexDirection = "column";
           form.style.gap = "8px";
 
+          const backToSummaryBtn = document.createElement("button");
+          backToSummaryBtn.textContent = "⬅ Wróć do podsumowania";
+          backToSummaryBtn.type = "button";
+          backToSummaryBtn.style.padding = "10px";
+          backToSummaryBtn.style.border = "none";
+          backToSummaryBtn.style.borderRadius = "10px";
+          backToSummaryBtn.style.background = "#eee";
+          backToSummaryBtn.style.color = "#143326";
+          backToSummaryBtn.style.fontWeight = "700";
+          backToSummaryBtn.style.cursor = "pointer";
+
+          backToSummaryBtn.onclick = function () {
+            btn.onclick();
+          };
+
           const title = document.createElement("div");
           title.textContent = "📦 Dane do zamówienia";
           title.style.fontWeight = "600";
@@ -1022,6 +1037,19 @@ function showCartUI() {
           const phone = document.createElement("input");
           phone.placeholder = "Numer telefonu (wpisz tutaj)";
 
+          const consentWrap = document.createElement("label");
+          consentWrap.className = "order-consent";
+
+          const consent = document.createElement("input");
+          consent.type = "checkbox";
+
+          const consentText = document.createElement("span");
+          consentText.textContent =
+            "Wyrażam zgodę na przetwarzanie danych w celu obsługi zamówienia.";
+
+          consentWrap.appendChild(consent);
+          consentWrap.appendChild(consentText);
+
           const submit = document.createElement("button");
           submit.textContent = "Zamawiam";
           submit.style.padding = "10px";
@@ -1033,7 +1061,7 @@ function showCartUI() {
 
           submit.onclick = async function () {
             if (orderSubmitting) return;
-            
+
             const now = Date.now();
             const lastOrderTime = localStorage.getItem("lastOrderTime");
 
@@ -1095,6 +1123,14 @@ function showCartUI() {
 
             if (!/^[0-9]{9}$/.test(phoneVal)) {
               showError(phone, "Telefon musi mieć 9 cyfr.");
+              return;
+            }
+
+            if (!consent.checked) {
+              showError(
+                consentWrap,
+                "Musisz zaakceptować zgodę, aby złożyć zamówienie.",
+              );
               return;
             }
 
@@ -1212,6 +1248,8 @@ function showCartUI() {
           form.appendChild(building);
           form.appendChild(apartment);
           form.appendChild(phone);
+          form.appendChild(consentWrap);
+          form.appendChild(backToSummaryBtn);
           form.appendChild(submit);
 
           messages.appendChild(form);
