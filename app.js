@@ -2589,6 +2589,9 @@ function showAdminBackendError(container, title) {
 let lastOrdersJSON = "";
 let previousOrdersCount = 0;
 let adminOrderView = "active";
+let adminOrdersCache = [];
+let adminOrdersLoaded = false;
+let pendingMovingOrders = new Set();
 
 function getOrderBucket(order) {
   const status = order.status || "";
@@ -2623,7 +2626,10 @@ function renderOrderViewTabs(container) {
     btn.onclick = function () {
       adminOrderView = view.id;
       lastOrdersJSON = "";
-      renderOrdersAdmin();
+
+      renderOrdersAdmin({
+        useCache: adminOrdersLoaded,
+      });
     };
 
     tabs.appendChild(btn);
@@ -2663,15 +2669,30 @@ function showOrderEmptyState(container) {
   container.appendChild(empty);
 }
 
-function completeOrderWithFade(card, orderId) {
+function moveOrderWithFade(card, orderId, newStatus) {
+  const id = String(orderId);
+
+  if (pendingMovingOrders.has(id)) return;
+
+  pendingMovingOrders.add(id);
   card.classList.add("order-card-fade-out");
 
-  setTimeout(function () {
-    updateOrderStatus(orderId, "✅ ZREALIZOWANE");
+  setTimeout(async function () {
+    await updateOrderStatus(orderId, newStatus, true);
+
+    pendingMovingOrders.delete(id);
+    lastOrdersJSON = "";
+    adminOrdersLoaded = false;
+
+    renderOrdersAdmin();
   }, 2000);
 }
 
-async function renderOrdersAdmin() {
+function completeOrderWithFade(card, orderId) {
+  moveOrderWithFade(card, orderId, "✅ ZREALIZOWANE");
+}
+
+async function renderOrdersAdmin(options = {}) {
   const container = document.getElementById("orders-admin-container");
 
   if (!container) return;
@@ -2679,10 +2700,18 @@ async function renderOrdersAdmin() {
   let orders = [];
 
   try {
-    orders = await fetchJSONWithTimeout(`${API_BASE}/orders`);
+    if (options.useCache) {
+      orders = adminOrdersCache;
+    } else {
+      orders = await fetchJSONWithTimeout(`${API_BASE}/orders`);
+      adminOrdersCache = orders;
+      adminOrdersLoaded = true;
+    }
+
     const currentJSON = JSON.stringify({
       orders,
       view: adminOrderView,
+      pending: Array.from(pendingMovingOrders),
     });
 
     if (currentJSON === lastOrdersJSON) {
@@ -2691,7 +2720,11 @@ async function renderOrdersAdmin() {
 
     lastOrdersJSON = currentJSON;
 
-    if (orders.length > previousOrdersCount && previousOrdersCount !== 0) {
+    if (
+      !options.useCache &&
+      orders.length > previousOrdersCount &&
+      previousOrdersCount !== 0
+    ) {
       const audio = new Audio(
         "https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg",
       );
@@ -2701,7 +2734,9 @@ async function renderOrdersAdmin() {
       audio.play();
     }
 
-    previousOrdersCount = orders.length;
+    if (!options.useCache) {
+      previousOrdersCount = orders.length;
+    }
 
     container.innerHTML = "<h3>📦 Zamówienia</h3>";
     renderOrderViewTabs(container);
@@ -2713,6 +2748,10 @@ async function renderOrdersAdmin() {
   }
 
   const visibleOrders = orders.filter((order) => {
+    if (pendingMovingOrders.has(String(order.id))) {
+      return false;
+    }
+
     return getOrderBucket(order) === adminOrderView;
   });
 
@@ -2824,7 +2863,7 @@ async function renderOrdersAdmin() {
         cancel.onclick = function (e) {
           e.stopPropagation();
 
-          updateOrderStatus(order.id, "❌ ANULOWANE");
+          moveOrderWithFade(card, order.id, "❌ ANULOWANE");
         };
 
         actions.appendChild(confirm);
@@ -2847,7 +2886,7 @@ async function renderOrdersAdmin() {
         done.onclick = function (e) {
           e.stopPropagation();
 
-          updateOrderStatus(order.id, "🍕 GOTOWE DO ODBIORU");
+          moveOrderWithFade(card, order.id, "🍕 GOTOWE DO ODBIORU");
         };
 
         actions.appendChild(done);
@@ -3111,7 +3150,7 @@ async function updateReservationStatus(reservation, newStatus) {
   }
 }
 
-async function updateOrderStatus(orderId, newStatus) {
+async function updateOrderStatus(orderId, newStatus, skipRender = false) {
   try {
     await fetch(`${API_BASE}/update-order-status`, {
       method: "POST",
@@ -3126,8 +3165,12 @@ async function updateOrderStatus(orderId, newStatus) {
       }),
     });
 
-    lastOrdersJSON = "";
-    renderOrdersAdmin();
+    adminOrdersLoaded = false;
+
+    if (!skipRender) {
+      lastOrdersJSON = "";
+      renderOrdersAdmin();
+    }
   } catch (e) {
     console.error(e);
 
