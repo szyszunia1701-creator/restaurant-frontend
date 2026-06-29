@@ -1032,6 +1032,8 @@ function showCartUI() {
           submit.style.cursor = "pointer";
 
           submit.onclick = async function () {
+            if (orderSubmitting) return;
+            
             const now = Date.now();
             const lastOrderTime = localStorage.getItem("lastOrderTime");
 
@@ -1040,7 +1042,7 @@ function showCartUI() {
               const diff = now - parseInt(lastOrderTime);
               const minutes = diff / 1000 / 60;
 
-              if (minutes < 0) {
+              if (minutes < 15) {
                 addMsg(
                   "❌ Możesz złożyć kolejne zamówienie za około " +
                     Math.ceil(15 - minutes) +
@@ -1096,6 +1098,12 @@ function showCartUI() {
               return;
             }
 
+            orderSubmitting = true;
+            submit.disabled = true;
+            submit.textContent = "Wysyłanie zamówienia...";
+            submit.style.opacity = "0.7";
+            submit.style.cursor = "not-allowed";
+
             /* ===== SAVE DATA ===== */
 
             orderData.address =
@@ -1134,12 +1142,19 @@ function showCartUI() {
             } catch (e) {
               console.error(e);
 
+              orderSubmitting = false;
+              submit.disabled = false;
+              submit.textContent = "Zamawiam";
+              submit.style.opacity = "1";
+              submit.style.cursor = "pointer";
+
               addMsg("❌ Nie udało się zapisać zamówienia.", "bot");
 
               return;
             }
 
             localStorage.setItem("lastOrderTime", now);
+            orderSubmitting = false;
 
             /* ===== MESSAGE ===== */
 
@@ -1227,6 +1242,7 @@ let orderStep = null;
 let orderCategory = null;
 let orderCart = [];
 let orderData = {};
+let orderSubmitting = false;
 
 function clearChat() {
   const firstMsg = messages.querySelector(".msg");
