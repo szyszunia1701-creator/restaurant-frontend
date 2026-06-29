@@ -1066,20 +1066,20 @@ function showCartUI() {
             const lastOrderTime = localStorage.getItem("lastOrderTime");
 
             /* ===== ANTI-SPAM ===== */
-            if (lastOrderTime) {
-              const diff = now - parseInt(lastOrderTime);
-              const minutes = diff / 1000 / 60;
+            // if (lastOrderTime) {
+            //   const diff = now - parseInt(lastOrderTime);
+            //   const minutes = diff / 1000 / 60;
 
-              if (minutes < 15) {
-                addMsg(
-                  "❌ Możesz złożyć kolejne zamówienie za około " +
-                    Math.ceil(15 - minutes) +
-                    " min.",
-                  "bot",
-                );
-                return;
-              }
-            }
+            //   if (minutes < 15) {
+            //     addMsg(
+            //       "❌ Możesz złożyć kolejne zamówienie za około " +
+            //         Math.ceil(15 - minutes) +
+            //         " min.",
+            //       "bot",
+            //     );
+            //     return;
+            //   }
+            // }
 
             const streetVal = street.value.trim();
             const buildingVal = building.value.trim();
@@ -1189,7 +1189,7 @@ function showCartUI() {
               return;
             }
 
-            localStorage.setItem("lastOrderTime", now);
+            // localStorage.setItem("lastOrderTime", now);
             orderSubmitting = false;
 
             /* ===== MESSAGE ===== */
