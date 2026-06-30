@@ -2124,3 +2124,187 @@ button {
   filter: brightness(1.05);
   transform: translateY(-1px);
 }
+
+/* ===== POLISH: ZAWARTOŚĆ KOSZYKA ===== */
+
+#bottom-cart-items {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+}
+
+.bottom-cart-empty {
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--muted);
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.bottom-cart-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+
+  padding: 11px 12px;
+
+  border-radius: 16px;
+
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.82),
+    rgba(255, 241, 239, 0.72)
+  );
+
+  border: 1px solid rgba(139, 0, 0, 0.09);
+
+  box-shadow:
+    0 7px 18px rgba(0, 0, 0, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.bottom-cart-item-info {
+  min-width: 0;
+}
+
+.bottom-cart-item-name {
+  color: var(--brand-dark);
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.bottom-cart-item-meta {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.bottom-cart-item-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 7px;
+}
+
+.bottom-cart-item-price {
+  color: var(--brand-red);
+  font-size: 14px;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.bottom-cart-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+
+  padding: 4px;
+
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(20, 51, 38, 0.08);
+}
+
+.bottom-cart-qty-btn,
+.bottom-cart-remove-btn {
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+
+  padding: 0 !important;
+  margin: 0 !important;
+
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  border: none !important;
+  border-radius: 50% !important;
+
+  font-size: 17px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+
+  cursor: pointer !important;
+
+  box-shadow: none !important;
+}
+
+.bottom-cart-qty-btn {
+  background: linear-gradient(135deg, #6faa7b, #3f7f5a) !important;
+  color: #fff !important;
+}
+
+.bottom-cart-remove-btn {
+  background: rgba(139, 0, 0, 0.1) !important;
+  color: var(--brand-red) !important;
+}
+
+.bottom-cart-qty {
+  min-width: 20px;
+  text-align: center;
+  color: var(--brand-dark);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.bottom-cart-qty-btn:hover {
+  filter: brightness(1.05);
+  transform: scale(1.05);
+}
+
+.bottom-cart-remove-btn:hover {
+  background: var(--brand-red) !important;
+  color: #fff !important;
+  transform: scale(1.05);
+}
+
+/* przycisk "Podsumowanie" */
+#summary-btn {
+  width: 100% !important;
+  min-height: 44px !important;
+
+  margin-top: 10px !important;
+  padding: 11px 14px !important;
+
+  border: none !important;
+  border-radius: 999px !important;
+
+  background: linear-gradient(
+    135deg,
+    var(--brand-red),
+    var(--brand-red-dark)
+  ) !important;
+
+  color: #fff !important;
+
+  font-size: 14px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.2px !important;
+
+  cursor: pointer !important;
+
+  box-shadow: 0 8px 18px rgba(139, 0, 0, 0.22) !important;
+
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease,
+    filter 0.16s ease !important;
+}
+
+#summary-btn:hover {
+  filter: brightness(1.06) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 12px 24px rgba(139, 0, 0, 0.28) !important;
+}
+
+#summary-btn:active {
+  transform: translateY(0) scale(0.98) !important;
+}

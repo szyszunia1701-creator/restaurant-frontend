@@ -1869,45 +1869,91 @@ function renderBottomCart() {
 
   bottomCartItems.innerHTML = "";
 
-  Object.keys(counts).forEach((name) => {
-    const row = document.createElement("div");
-    row.style.display = "flex";
-    row.style.justifyContent = "space-between";
-    row.style.alignItems = "center";
-    row.style.marginBottom = "6px";
+  const items = Object.keys(counts);
 
-    const left = document.createElement("div");
-    left.textContent = name;
-    left.style.flex = "1";
+  if (!items.length) {
+    const empty = document.createElement("div");
+    empty.className = "bottom-cart-empty";
+    empty.textContent = "Koszyk jest pusty.";
+    bottomCartItems.appendChild(empty);
+
+    bottomCartTotal.textContent = "Razem: 0 zł";
+    return;
+  }
+
+  items.forEach((name) => {
+    const itemDisplay = parseOrderItemDisplay(name);
+    const quantity = counts[name];
+    const unitPrice = extractPrice(name);
+    const subtotal = unitPrice * quantity;
+
+    const row = document.createElement("div");
+    row.className = "bottom-cart-item";
+
+    const info = document.createElement("div");
+    info.className = "bottom-cart-item-info";
+
+    const itemName = document.createElement("div");
+    itemName.className = "bottom-cart-item-name";
+    itemName.textContent = itemDisplay.name;
+
+    const meta = document.createElement("div");
+    meta.className = "bottom-cart-item-meta";
+
+    const metaParts = [];
+
+    if (itemDisplay.size) {
+      metaParts.push("rozmiar: " + itemDisplay.size);
+    }
+
+    if (unitPrice) {
+      metaParts.push(unitPrice + " zł / szt.");
+    }
+
+    meta.textContent = metaParts.join(" • ");
+
+    info.appendChild(itemName);
+
+    if (meta.textContent) {
+      info.appendChild(meta);
+    }
+
+    const right = document.createElement("div");
+    right.className = "bottom-cart-item-right";
+
+    const price = document.createElement("div");
+    price.className = "bottom-cart-item-price";
+    price.textContent = subtotal + " zł";
 
     const controls = document.createElement("div");
-    controls.style.display = "flex";
-    controls.style.alignItems = "center";
-    controls.style.gap = "6px";
+    controls.className = "bottom-cart-controls";
 
     const minus = document.createElement("button");
+    minus.type = "button";
+    minus.className = "bottom-cart-qty-btn";
     minus.textContent = "−";
-    minus.style.padding = "2px 6px";
-    minus.style.cursor = "pointer";
 
     const qty = document.createElement("span");
-    qty.textContent = counts[name];
+    qty.className = "bottom-cart-qty";
+    qty.textContent = quantity;
 
     const plus = document.createElement("button");
+    plus.type = "button";
+    plus.className = "bottom-cart-qty-btn";
     plus.textContent = "+";
-    plus.style.padding = "2px 6px";
-    plus.style.cursor = "pointer";
 
     const remove = document.createElement("button");
-    remove.textContent = "✕";
-    remove.style.padding = "2px 6px";
-    remove.style.cursor = "pointer";
+    remove.type = "button";
+    remove.className = "bottom-cart-remove-btn";
+    remove.textContent = "×";
 
     minus.onclick = function () {
       const index = orderCart.indexOf(name);
+
       if (index > -1) {
         orderCart.splice(index, 1);
       }
+
       renderBottomCart();
     };
 
@@ -1926,8 +1972,11 @@ function renderBottomCart() {
     controls.appendChild(plus);
     controls.appendChild(remove);
 
-    row.appendChild(left);
-    row.appendChild(controls);
+    right.appendChild(price);
+    right.appendChild(controls);
+
+    row.appendChild(info);
+    row.appendChild(right);
 
     bottomCartItems.appendChild(row);
   });
@@ -2720,11 +2769,9 @@ async function askAI(text) {
   }
 
   addMsg(
-    "Mogę pomóc w sprawie menu, godzin otwarcia, kontaktu, rezerwacji albo zamówienia. Nie chcę zgadywać informacji, których restauracja nie dodała do systemu.",
+    "Mogę pomóc w sprawie menu, godzin otwarcia, kontaktu, rezerwacji albo zamówienia. Nie mam tej informacji w systemie restauracji.",
     "bot",
   );
-
-  addQuick();
 }
 
 /* ===== ADMIN OPEN/CLOSE TOGGLE ===== */
