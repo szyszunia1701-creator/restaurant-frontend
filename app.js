@@ -2538,19 +2538,193 @@ function renderAdminTable() {
   prodCol.appendChild(plus);
 }
 
-async function askAI(text) {
-  try {
-    const res = await fetch(`${API_BASE}/ai`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: text }),
-    });
+function normalizeChatText(value) {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\w\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
-    const data = await res.json();
-    addMsg(data.reply, "bot");
-  } catch (e) {
-    addMsg("⚠️ Błąd AI (backend nie działa?)", "bot");
+function formatCurrentMenu() {
+  const menu = getAdminMenu();
+
+  if (!menu || !Object.keys(menu).length) {
+    return "Menu nie zostało jeszcze uzupełnione przez restaurację.";
   }
+
+  let msg = "📖 Aktualne menu:\n";
+
+  Object.keys(menu).forEach((category) => {
+    msg += "\n" + category.toUpperCase() + ":\n";
+
+    menu[category].forEach((product) => {
+      if (product.sizes) {
+        msg +=
+          "• " +
+          product.name +
+          " — mały " +
+          product.sizes.small +
+          " zł / duży " +
+          product.sizes.large +
+          " zł\n";
+      } else {
+        msg += "• " + product.name + " — " + product.price + " zł\n";
+      }
+    });
+  });
+
+  return msg.trim();
+}
+
+function getMenuItemsForSearch() {
+  const menu = getAdminMenu();
+  const items = [];
+
+  Object.keys(menu).forEach((category) => {
+    menu[category].forEach((product) => {
+      let priceText = "";
+
+      if (product.sizes) {
+        priceText =
+          "mały " +
+          product.sizes.small +
+          " zł / duży " +
+          product.sizes.large +
+          " zł";
+      } else {
+        priceText = product.price + " zł";
+      }
+
+      items.push({
+        category,
+        name: product.name,
+        priceText,
+        searchText: normalizeChatText(category + " " + product.name),
+      });
+    });
+  });
+
+  return items;
+}
+
+function findMenuMatches(text) {
+  const query = normalizeChatText(text);
+
+  const stopWords = [
+    "czy",
+    "macie",
+    "jest",
+    "sa",
+    "są",
+    "ile",
+    "kosztuje",
+    "kosztuja",
+    "kosztują",
+    "jaka",
+    "jaki",
+    "jakie",
+    "poprosze",
+    "proszę",
+    "menu",
+    "danie",
+    "dania",
+  ];
+
+  const words = query
+    .split(" ")
+    .filter((word) => word.length >= 3 && !stopWords.includes(word));
+
+  if (!words.length) return [];
+
+  return getMenuItemsForSearch()
+    .map((item) => {
+      let score = 0;
+
+      words.forEach((word) => {
+        if (item.searchText.includes(word)) {
+          score++;
+        }
+      });
+
+      return {
+        ...item,
+        score,
+      };
+    })
+    .filter((item) => item.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 5);
+}
+
+function answerFromRestaurantData(text) {
+  const query = normalizeChatText(text);
+
+  if (/godzin|otwar|czynne|zamkn|ktorej|kiedy/.test(query)) {
+    return "⏰ Godziny otwarcia:\nPon–Czw 12–22\nPt–Nd 12–23";
+  }
+
+  if (/kontakt|telefon|adres|gdzie|lokalizacja/.test(query)) {
+    return "📞 Telefon: 123 456 789\n📍 Adres: ul. Przykładowa 10";
+  }
+
+  if (/rezerw|stolik|booking/.test(query)) {
+    return "📅 Mogę pomóc w rezerwacji stolika. Kliknij „📅 Rezerwacja” albo napisz, na jaki dzień chcesz zarezerwować stolik.";
+  }
+
+  if (
+    /menu|karta|jedzenie|dania|pizza|makaron|burger|kanap|cena|koszt|macie|wege|wega|bez miesa|bez mięsa/.test(
+      query,
+    )
+  ) {
+    const matches = findMenuMatches(text);
+
+    if (matches.length) {
+      let msg = "Znalazłem w aktualnym menu:\n\n";
+
+      matches.forEach((item) => {
+        msg +=
+          "• " +
+          item.name +
+          " — " +
+          item.priceText +
+          " (" +
+          item.category +
+          ")\n";
+      });
+
+      msg +=
+        "\nMożesz kliknąć „🛒 Zamów jedzenie”, żeby przejść do zamówienia.";
+
+      return msg.trim();
+    }
+
+    if (/menu|karta|dania|jedzenie/.test(query)) {
+      return formatCurrentMenu();
+    }
+
+    return "Nie znalazłem tego w aktualnym menu restauracji. Mogę pokazać całe menu albo pomóc z rezerwacją.";
+  }
+
+  return null;
+}
+
+async function askAI(text) {
+  const safeAnswer = answerFromRestaurantData(text);
+
+  if (safeAnswer) {
+    addMsg(safeAnswer, "bot");
+    return;
+  }
+
+  addMsg(
+    "Mogę pomóc w sprawie menu, godzin otwarcia, kontaktu, rezerwacji albo zamówienia. Nie chcę zgadywać informacji, których restauracja nie dodała do systemu.",
+    "bot",
+  );
+
+  addQuick();
 }
 
 /* ===== ADMIN OPEN/CLOSE TOGGLE ===== */
