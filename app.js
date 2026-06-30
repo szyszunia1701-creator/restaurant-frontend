@@ -52,15 +52,26 @@ toggle.onclick = () => {
   box.classList.toggle("open");
   hint.classList.remove("show");
   clearTimeout(hintTimeout);
-  hideCartUI();
+
+  if (!box.classList.contains("open")) {
+    return;
+  }
+
   if (!messages.children.length) {
     addMsg(`Cześć 👋 Jestem asystentem ${RESTAURANT_NAME}.`, "bot");
     addQuick();
     document.getElementById("chat-input").style.display = "flex";
   }
+
+  if (orderCart.length > 0 || orderStep) {
+    showCartUI();
+    renderBottomCart();
+  }
 };
 
-closeBtn.onclick = () => box.classList.remove("open");
+closeBtn.onclick = () => {
+  box.classList.remove("open");
+};
 
 function resetReservation() {
   reservationStep = null;
@@ -86,6 +97,27 @@ function createQuickActions(actions) {
     box.appendChild(b);
   });
   return box;
+}
+
+function enableCategoryBarScroll(bar) {
+  if (!bar || bar.dataset.scrollReady === "true") return;
+
+  bar.dataset.scrollReady = "true";
+
+  bar.addEventListener(
+    "wheel",
+    function (e) {
+      if (bar.scrollWidth <= bar.clientWidth) return;
+
+      const verticalScroll = Math.abs(e.deltaY) > Math.abs(e.deltaX);
+
+      if (verticalScroll) {
+        bar.scrollLeft += e.deltaY;
+        e.preventDefault();
+      }
+    },
+    { passive: false },
+  );
 }
 
 function addQuick() {
@@ -849,10 +881,20 @@ adminBtn.addEventListener("click", () => {
 /* ===== CART VISIBILITY CONTROL ===== */
 function showCartUI() {
   const panel = document.getElementById("bottom-cart-panel");
+  const arrow = document.getElementById("cart-arrow");
+
   if (panel) {
     panel.style.display = "block";
     panel.classList.remove("open");
-    panel.style.transform = "translateY(255px)";
+    panel.style.transform = "";
+
+    if (arrow) {
+      arrow.textContent = "⬆";
+    }
+
+    if (typeof renderBottomCart === "function") {
+      renderBottomCart();
+    }
 
     /* create summary button if not exists */
     if (!document.getElementById("summary-btn")) {
@@ -1362,9 +1404,21 @@ function startOrder() {
   const bar = document.createElement("div");
   bar.className = "category-bar";
 
-  Object.keys(ORDER_CATEGORIES).forEach((cat) => {
+  const categories = Object.keys(ORDER_CATEGORIES);
+
+  if (!categories.length) {
+    addMsg("Menu zamówień jest chwilowo puste.", "bot");
+    return;
+  }
+
+  categories.forEach((cat, index) => {
     const b = document.createElement("button");
     b.textContent = cat;
+
+    if (index === 0) {
+      orderCategory = cat;
+      b.classList.add("active");
+    }
 
     b.onclick = () => {
       orderCategory = cat;
@@ -1380,6 +1434,8 @@ function startOrder() {
   });
 
   messages.appendChild(bar);
+  enableCategoryBarScroll(bar);
+  showOrderItems();
 }
 
 function parseOrderItemDisplay(item) {
@@ -1439,7 +1495,7 @@ function showOrderItems() {
   msg.className = "msg bot order-items-msg";
   msg.textContent = "";
 
-  const items = ORDER_CATEGORIES[orderCategory];
+  const items = ORDER_CATEGORIES[orderCategory] || [];
 
   const container = document.createElement("div");
   container.className = "product-grid order-items";
@@ -1791,14 +1847,14 @@ orderBtn.onclick = function () {
 const cartArrow = document.getElementById("cart-arrow");
 
 bottomCartBar.onclick = function () {
+  bottomCartPanel.style.transform = "";
+
   if (!bottomCartPanel.classList.contains("open")) {
     bottomCartPanel.classList.add("open");
-    bottomCartPanel.style.transform = "translateY(0)";
     cartArrow.textContent = "⬇";
     renderBottomCart();
   } else {
     bottomCartPanel.classList.remove("open");
-    bottomCartPanel.style.transform = "translateY(255px)";
     cartArrow.textContent = "⬆";
   }
 };

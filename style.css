@@ -719,9 +719,10 @@ button {
 
 .quick button:hover {
   transform: translateY(-2px);
-  background: var(--brand-dark);
+  background: linear-gradient(135deg, #6faa7b, #3f7f5a);
   color: #fff;
-  box-shadow: 0 8px 18px rgba(20, 51, 38, 0.18);
+  border-color: rgba(63, 127, 90, 0.5);
+  box-shadow: 0 8px 18px rgba(63, 127, 90, 0.18);
 }
 
 .quick button:active {
@@ -800,6 +801,13 @@ button {
 
 /* ===== BOTTOM CART IMPROVED ===== */
 #bottom-cart-bar {
+  min-height: 58px !important;
+  padding: 8px 0 !important;
+
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+
   border-bottom-left-radius: 28px;
   border-bottom-right-radius: 28px;
 
@@ -812,14 +820,24 @@ button {
 
   box-shadow: 0 -8px 22px rgba(139, 0, 0, 0.24) !important;
 }
+
 #bottom-cart-bar * {
   color: #fff !important;
 }
 
 #bottom-cart-panel {
   display: none;
-  transform: translateY(100%);
-  transition: transform 0.35s ease;
+
+  position: absolute !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+
+  height: 320px !important;
+
+  overflow: hidden !important;
+
+  border-radius: 20px 20px 28px 28px !important;
 
   background: linear-gradient(
     135deg,
@@ -829,7 +847,48 @@ button {
 
   border-top: 1px solid rgba(139, 0, 0, 0.25) !important;
   box-shadow: 0 -14px 34px rgba(0, 0, 0, 0.16) !important;
-  z-index: 50 !important;
+
+  transform: translateY(calc(100% - 58px)) !important;
+  transition: transform 0.35s ease !important;
+
+  z-index: 80 !important;
+}
+
+#bottom-cart-panel.open {
+  transform: translateY(0) !important;
+}
+
+#bottom-cart-panel > div:nth-child(2) {
+  height: calc(100% - 58px) !important;
+  overflow-y: auto !important;
+  padding: 12px !important;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.72),
+      rgba(255, 235, 232, 0.52)
+    ),
+    radial-gradient(
+      circle at top right,
+      rgba(139, 0, 0, 0.16),
+      transparent 34%
+    ),
+    radial-gradient(
+      circle at bottom left,
+      rgba(139, 0, 0, 0.1),
+      transparent 42%
+    ) !important;
+
+  border-top: 1px solid rgba(255, 255, 255, 0.72) !important;
+  box-shadow:
+    inset 0 12px 30px rgba(255, 255, 255, 0.46),
+    inset 0 -10px 24px rgba(139, 0, 0, 0.06) !important;
+
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+
+  color: var(--text-main) !important;
 }
 
 @keyframes fadeIn {
@@ -930,7 +989,6 @@ button {
 }
 
 /* ===== CATEGORY BAR IMPROVED ===== */
-/* ===== CATEGORY BAR IMPROVED ===== */
 .category-bar {
   position: sticky;
   top: 0;
@@ -938,7 +996,9 @@ button {
   display: flex;
   gap: 8px;
   overflow-x: auto;
+  overflow-y: hidden;
 
+  max-width: 100%;
   margin: 0 -4px 10px;
   padding: 10px 8px 12px;
 
@@ -956,11 +1016,22 @@ button {
 
   z-index: 5;
 
-  scrollbar-width: none;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(63, 127, 90, 0.45) transparent;
+  overscroll-behavior-x: contain;
 }
 
 .category-bar::-webkit-scrollbar {
-  display: none;
+  height: 7px;
+}
+
+.category-bar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.category-bar::-webkit-scrollbar-thumb {
+  background: rgba(63, 127, 90, 0.42);
+  border-radius: 999px;
 }
 
 .category-bar button {
@@ -1310,20 +1381,8 @@ button {
   }
   /* ===== MOBILE CART PANEL ===== */
   #bottom-cart-panel {
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    width: 100% !important;
     height: min(46dvh, 360px) !important;
     border-radius: 20px 20px 0 0 !important;
-    overflow: hidden !important;
-    transform: translateY(calc(100% - 58px)) !important;
-    z-index: 80 !important;
-    background: linear-gradient(
-      135deg,
-      var(--brand-red),
-      var(--brand-red-dark)
-    ) !important;
   }
 
   #bottom-cart-panel.open {
@@ -1342,28 +1401,6 @@ button {
     height: calc(100% - 58px) !important;
     overflow-y: auto !important;
     padding: 12px !important;
-
-    background:
-      radial-gradient(
-        circle at top right,
-        rgba(255, 255, 255, 0.95),
-        transparent 36%
-      ),
-      radial-gradient(
-        circle at bottom left,
-        rgba(139, 0, 0, 0.07),
-        transparent 42%
-      ),
-      linear-gradient(
-        180deg,
-        rgba(255, 255, 255, 0.94),
-        rgba(255, 244, 239, 0.96)
-      ) !important;
-
-    border-top: 2px solid rgba(255, 255, 255, 0.65) !important;
-    box-shadow: inset 0 12px 24px rgba(255, 255, 255, 0.38) !important;
-
-    color: var(--text-main) !important;
   }
 
   #bottom-cart-items {
@@ -1389,11 +1426,12 @@ button {
     margin-right: -12px !important;
     padding: 10px 12px 12px !important;
     overflow-x: auto !important;
-    scrollbar-width: none;
+    scrollbar-width: thin !important;
   }
 
   .category-bar::-webkit-scrollbar {
-    display: none;
+    height: 7px !important;
+    display: block !important;
   }
 
   .category-bar button {
