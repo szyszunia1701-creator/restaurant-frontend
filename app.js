@@ -1481,6 +1481,126 @@ function parseOrderItemDisplay(item) {
   };
 }
 
+function addProductToCart(item, quantity) {
+  clearChat();
+
+  for (let i = 0; i < quantity; i++) {
+    orderCart.push(item);
+  }
+
+  const itemDisplay = parseOrderItemDisplay(item);
+  const unitPrice = extractPrice(item);
+  const subtotal = unitPrice * quantity;
+
+  const card = document.createElement("div");
+  card.className = "cart-added-card";
+
+  const title = document.createElement("div");
+  title.className = "cart-added-title";
+  title.textContent = "✅ Dodano do koszyka";
+
+  const name = document.createElement("div");
+  name.className = "cart-added-name";
+  name.textContent = itemDisplay.name;
+
+  const meta = document.createElement("div");
+  meta.className = "cart-added-meta";
+
+  let metaText = "Ilość: " + quantity;
+
+  if (itemDisplay.size) {
+    metaText += " • rozmiar: " + itemDisplay.size;
+  }
+
+  meta.textContent = metaText;
+
+  const price = document.createElement("div");
+  price.className = "cart-added-price";
+  price.textContent = "Suma za produkt: " + subtotal + " zł";
+
+  const total = document.createElement("div");
+  total.className = "cart-added-total";
+  total.textContent = "Aktualna wartość koszyka: " + getCartTotal() + " zł";
+
+  const actions = document.createElement("div");
+  actions.className = "cart-added-actions";
+
+  const addMoreBtn = document.createElement("button");
+  addMoreBtn.type = "button";
+  addMoreBtn.className = "cart-added-btn primary";
+  addMoreBtn.textContent = "➕ Dodaj kolejny produkt";
+  addMoreBtn.onclick = startOrder;
+
+  actions.appendChild(addMoreBtn);
+
+  card.appendChild(title);
+  card.appendChild(name);
+  card.appendChild(meta);
+  card.appendChild(price);
+  card.appendChild(total);
+  card.appendChild(actions);
+
+  messages.appendChild(card);
+  messages.scrollTop = messages.scrollHeight;
+
+  updateCartBar();
+  showCartUI();
+  renderBottomCart();
+}
+
+function showMoreQuantitySelector(item) {
+  clearChat();
+
+  const itemDisplay = parseOrderItemDisplay(item);
+
+  const card = document.createElement("div");
+  card.className = "quantity-more-card";
+
+  const title = document.createElement("div");
+  title.className = "quantity-more-title";
+  title.textContent = "Wybierz ilość porcji";
+
+  const product = document.createElement("div");
+  product.className = "quantity-more-product";
+  product.textContent = itemDisplay.name;
+
+  const select = document.createElement("select");
+  select.className = "quantity-more-select";
+
+  for (let i = 5; i <= 99; i++) {
+    const option = document.createElement("option");
+    option.value = i;
+    option.textContent = i + " porcji";
+    select.appendChild(option);
+  }
+
+  const confirm = document.createElement("button");
+  confirm.type = "button";
+  confirm.className = "quantity-more-confirm";
+  confirm.textContent = "Dodaj do koszyka";
+
+  confirm.onclick = function () {
+    addProductToCart(item, parseInt(select.value, 10));
+  };
+
+  const back = document.createElement("button");
+  back.type = "button";
+  back.className = "quantity-more-back";
+  back.textContent = "⬅ Wróć";
+  back.onclick = function () {
+    showOrderItems();
+  };
+
+  card.appendChild(title);
+  card.appendChild(product);
+  card.appendChild(select);
+  card.appendChild(confirm);
+  card.appendChild(back);
+
+  messages.appendChild(card);
+  messages.scrollTop = messages.scrollHeight;
+}
+
 function showOrderItems() {
   orderStep = "items";
 
@@ -1490,10 +1610,6 @@ function showOrderItems() {
 
   const oldMsg = document.querySelector(".order-items-msg");
   if (oldMsg) oldMsg.remove();
-
-  const msg = document.createElement("div");
-  msg.className = "msg bot order-items-msg";
-  msg.textContent = "";
 
   const items = ORDER_CATEGORIES[orderCategory] || [];
 
@@ -1528,80 +1644,52 @@ function showOrderItems() {
     card.onclick = function () {
       clearChat();
 
-      addMsg("🍕 Ile porcji chcesz zamówić?", "bot");
+      const itemDisplay = parseOrderItemDisplay(item);
+
+      const cardBox = document.createElement("div");
+      cardBox.className = "quantity-card";
+
+      const title = document.createElement("div");
+      title.className = "quantity-title";
+      title.textContent = "🍕 Ile porcji chcesz zamówić?";
+
+      const product = document.createElement("div");
+      product.className = "quantity-product";
+      product.textContent = itemDisplay.name;
 
       const qty = document.createElement("div");
-      qty.className = "quick";
+      qty.className = "quantity-options";
 
       [1, 2, 3, 4].forEach((n) => {
         const b = document.createElement("button");
+        b.type = "button";
+        b.className = "quantity-option";
         b.textContent = n;
 
         b.onclick = function () {
-          qty.remove();
-
-          clearChat();
-
-          for (let i = 0; i < n; i++) {
-            orderCart.push(item);
-          }
-
-          addMsg(
-            "✅ Dodano do koszyka:\n\n" +
-              item +
-              " x" +
-              n +
-              "\n\n💰 Aktualna suma: " +
-              getCartTotal() +
-              " zł",
-            "bot",
-          );
-
-          const addMoreBtn = document.createElement("button");
-          addMoreBtn.textContent = "➕ Dodaj kolejny produkt";
-          addMoreBtn.style.marginTop = "6px";
-          addMoreBtn.style.padding = "6px 10px";
-          addMoreBtn.style.border = "none";
-          addMoreBtn.style.borderRadius = "10px";
-          addMoreBtn.style.cursor = "pointer";
-          addMoreBtn.onclick = startOrder;
-          messages.appendChild(addMoreBtn);
-
-          updateCartBar();
-
-          const actions = document.createElement("div");
-          actions.className = "quick";
-
-          const more = document.createElement("button");
-          more.textContent = "➕ Dodaj coś jeszcze";
-          more.onclick = startOrder;
-
-          const cart = document.createElement("button");
-          cart.textContent = "🛒 Koszyk";
-          cart.onclick = showCart;
-
-          actions.appendChild(more);
-          actions.appendChild(cart);
-
-          messages.appendChild(actions);
+          addProductToCart(item, n);
         };
 
         qty.appendChild(b);
       });
 
       const moreBtn = document.createElement("button");
+      moreBtn.type = "button";
+      moreBtn.className = "quantity-option more";
       moreBtn.textContent = "więcej";
 
       moreBtn.onclick = function () {
-        qty.remove();
-        addMsg("✏️ Wpisz ilość porcji:", "bot");
-        orderStep = "customQty";
-        orderData.selectedItem = item;
+        showMoreQuantitySelector(item);
       };
 
       qty.appendChild(moreBtn);
 
-      messages.appendChild(qty);
+      cardBox.appendChild(title);
+      cardBox.appendChild(product);
+      cardBox.appendChild(qty);
+
+      messages.appendChild(cardBox);
+      messages.scrollTop = messages.scrollHeight;
     };
 
     container.appendChild(card);
