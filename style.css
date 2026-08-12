@@ -36,7 +36,13 @@ input {
   font-family: inherit;
 }
 
-button {
+#chat-toggle,
+#chat-toggle img,
+#bottom-cart-bar,
+button,
+.product-card,
+.category-bar,
+.category-bar button {
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -1173,6 +1179,67 @@ button {
   box-shadow:
     0 14px 28px rgba(0, 0, 0, 0.14),
     0 8px 18px rgba(139, 0, 0, 0.08);
+}
+
+.product-card-with-sizes.size-open {
+  transform: scale(1.025);
+  border-color: rgba(181, 124, 0, 0.34);
+  box-shadow:
+    0 14px 28px rgba(0, 0, 0, 0.13),
+    0 0 0 3px rgba(217, 165, 20, 0.1);
+}
+
+.product-card-with-sizes::after {
+  content: "⌄";
+  top: 9px;
+  bottom: auto;
+  transition: transform 0.2s ease;
+}
+
+.product-card-with-sizes.size-open::after {
+  transform: rotate(180deg);
+}
+
+.product-size-options {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 7px;
+  max-height: 0;
+  margin-top: 0;
+  opacity: 0;
+  overflow: hidden;
+  transform: translateY(-7px);
+  pointer-events: none;
+  transition:
+    max-height 0.24s ease,
+    margin-top 0.24s ease,
+    opacity 0.2s ease,
+    transform 0.24s ease;
+}
+
+.product-card.size-open .product-size-options {
+  max-height: 110px;
+  margin-top: 12px;
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.product-size-option {
+  min-height: 36px;
+  padding: 7px 10px;
+  border: 1px solid rgba(181, 124, 0, 0.24);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--brand-dark);
+  font-size: 12px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.product-size-option:hover {
+  background: #fff4cf;
+  border-color: rgba(181, 124, 0, 0.45);
 }
 
 .product-name {
