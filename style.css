@@ -784,6 +784,33 @@ button,
   background: #fff;
 }
 
+#chat-sticky-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 6px;
+  padding: 7px 10px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.96);
+  z-index: 20;
+}
+
+#chat-sticky-actions button {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 7px 5px;
+  border: 1px solid rgba(139, 0, 0, 0.18);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--brand-red-dark);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+#chat-sticky-actions button:hover {
+  background: var(--cream);
+}
+
 #chat-input input {
   flex: 1;
   border: none;
@@ -1328,6 +1355,17 @@ button,
     flex-shrink: 0;
     min-height: 58px;
     padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  #chat-sticky-actions {
+    padding: 6px 8px;
+    padding-left: max(8px, env(safe-area-inset-left));
+    padding-right: max(8px, env(safe-area-inset-right));
+  }
+
+  #chat-sticky-actions button {
+    min-height: 38px;
+    font-size: 11px;
   }
 
   #chat-input input {

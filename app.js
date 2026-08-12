@@ -84,6 +84,7 @@ let reservationStep = null;
 let reservation = {};
 let cancelStep = null;
 let cancelData = {};
+let orderFlowActive = false;
 const OPENING_HOURS = {
   weekday: { from: 12, to: 22 },
   weekend: { from: 12, to: 23 },
@@ -108,6 +109,9 @@ toggle.onclick = () => {
   clearTimeout(hintTimeout);
 
   if (!box.classList.contains("open")) {
+    orderFlowActive = false;
+    orderStep = null;
+    messages.innerHTML = "";
     hideCartUI();
     return;
   }
@@ -122,6 +126,9 @@ toggle.onclick = () => {
 
 closeBtn.onclick = () => {
   box.classList.remove("open");
+  orderFlowActive = false;
+  orderStep = null;
+  messages.innerHTML = "";
   hideCartUI();
 };
 
@@ -135,8 +142,16 @@ function addMsg(text, cls) {
   d.className = "msg " + cls;
   d.textContent = text;
   messages.appendChild(d);
-  messages.scrollTop = messages.scrollHeight;
+  scrollToBottom();
 }
+
+function scrollToBottom() {
+  requestAnimationFrame(() => {
+    messages.scrollTop = messages.scrollHeight;
+  });
+}
+
+new MutationObserver(scrollToBottom).observe(messages, { childList: true });
 
 /* ===== QUICK BUTTON HELPER ===== */
 function createQuickActions(actions) {
@@ -150,6 +165,30 @@ function createQuickActions(actions) {
   });
   return box;
 }
+
+function createStickyQuickActions() {
+  if (document.getElementById("chat-sticky-actions")) return;
+
+  const actionBar = document.createElement("div");
+  actionBar.id = "chat-sticky-actions";
+  actionBar.setAttribute("aria-label", "Szybkie akcje");
+
+  [
+    { text: "🛒 Zamów", onClick: startOrder },
+    { text: "📖 Menu", onClick: showMenu },
+    { text: "📅 Rezerwuj", onClick: startReservation },
+  ].forEach((action) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = action.text;
+    button.onclick = action.onClick;
+    actionBar.appendChild(button);
+  });
+
+  document.getElementById("chat-input").before(actionBar);
+}
+
+createStickyQuickActions();
 
 function enableCategoryBarScroll(bar) {
   if (!bar || bar.dataset.scrollReady === "true") return;
@@ -188,7 +227,9 @@ function addQuick() {
       b.classList.add("quick-order-main");
     }
     b.onclick = () => {
-      if (t.includes("Zamów")) {
+      if (t === "📖 Menu") {
+        showMenu();
+      } else if (t.includes("Zamów")) {
         startOrder();
       } else {
         input.value = t;
@@ -198,6 +239,7 @@ function addQuick() {
     q.appendChild(b);
   });
   messages.appendChild(q);
+  scrollToBottom();
 }
 
 function isSandwichCommand(text) {
@@ -315,10 +357,13 @@ function isValidSurname(t) {
 function showMenu() {
   resetReservation();
   cancelStep = null;
-  addMsg("🍕 MENU", "bot");
+  addMsg(formatCurrentMenu(), "bot");
+  showMenuImages();
 }
 
 function startReservation() {
+  orderFlowActive = false;
+  hideCartUI();
   resetReservation();
   cancelStep = null;
   orderStep = null;
@@ -527,8 +572,7 @@ function sendMsg() {
     return;
   }
   if (intent === "menu") {
-    addMsg(answerFromRestaurantData(text), "bot");
-    showMenuImages();
+    showMenu();
     return;
   }
   if (intent === "hours") {
@@ -767,10 +811,8 @@ function showSandwichImages() {
 
 /* ===== SHOW MENU IMAGES IN CHAT ===== */
 function showMenuImages() {
-  if (!menuImages.length) {
-    addMsg("Menu nie zostało jeszcze dodane przez restaurację.", "bot");
-    return;
-  }
+  // Brak zdjęć nie oznacza braku menu tekstowego.
+  if (!menuImages.length) return;
 
   const container = document.createElement("div");
   container.className = "menu-images";
@@ -783,7 +825,7 @@ function showMenuImages() {
   });
 
   messages.appendChild(container);
-  messages.scrollTop = messages.scrollHeight;
+  scrollToBottom();
 }
 
 /* ===== MODAL ===== */
@@ -797,11 +839,6 @@ function closeMenuModal() {
 }
 
 /* ===== DETECT MENU WORD ===== */
-const originalShowMenu = showMenu;
-showMenu = function () {
-  originalShowMenu();
-  showMenuImages();
-};
 
 /* ===== ADMIN MENU IMAGE UPLOAD ===== */
 const adminPanel = document.getElementById("admin-panel");
@@ -929,10 +966,6 @@ adminBtn.addEventListener("click", () => {
 function showCartUI() {
   const panel = document.getElementById("bottom-cart-panel");
   const arrow = document.getElementById("cart-arrow");
-
-  if (typeof updateCartBar === "function") {
-    updateCartBar();
-  }
 
   if (panel) {
     panel.style.display = "block";
@@ -1421,6 +1454,7 @@ function getCartTotal() {
 const ORDER_CATEGORIES = {};
 
 function startOrder() {
+  orderFlowActive = true;
   document.getElementById("chat-input").style.display = "none";
 
   messages.innerHTML = "";
@@ -1445,6 +1479,7 @@ function startOrder() {
   back.style.transform = "translateY(-50%)";
 
   back.onclick = function () {
+    orderFlowActive = false;
     orderStep = null;
     messages.innerHTML = "";
     addMsg(`Cześć 👋 Jestem asystentem ${RESTAURANT_NAME}.`, "bot");
@@ -1492,6 +1527,8 @@ function startOrder() {
   messages.appendChild(bar);
   enableCategoryBarScroll(bar);
   showOrderItems();
+  if (orderCart.length > 0) showCartUI();
+  scrollToBottom();
 }
 
 function parseOrderItemDisplay(item) {
@@ -1573,11 +1610,12 @@ function addProductToCart(item, quantity) {
   card.appendChild(actions);
 
   messages.appendChild(card);
-  messages.scrollTop = messages.scrollHeight;
+  scrollToBottom();
 
   updateCartBar();
-  showCartUI();
+  if (orderFlowActive && orderCart.length > 0) showCartUI();
   renderBottomCart();
+  scrollToBottom();
 }
 
 function showQuantitySelector(item) {
@@ -1632,7 +1670,7 @@ function showQuantitySelector(item) {
   card.appendChild(qty);
   card.appendChild(back);
   messages.appendChild(card);
-  messages.scrollTop = messages.scrollHeight;
+  scrollToBottom();
 }
 
 function showMoreQuantitySelector(item) {
@@ -1685,7 +1723,7 @@ function showMoreQuantitySelector(item) {
   card.appendChild(back);
 
   messages.appendChild(card);
-  messages.scrollTop = messages.scrollHeight;
+  scrollToBottom();
 }
 
 function showOrderItems() {
@@ -1736,6 +1774,7 @@ function showOrderItems() {
   });
 
   messages.appendChild(container);
+  scrollToBottom();
 }
 
 function handleOrder(text) {
@@ -1855,6 +1894,7 @@ function handleOrder(text) {
 function showOrderSuccessScreen(msg) {
   messages.innerHTML = "";
 
+  orderFlowActive = false;
   orderStep = null;
   orderCategory = null;
 
@@ -2082,17 +2122,17 @@ function renderBottomCart() {
         orderCart.splice(index, 1);
       }
 
-      renderBottomCart();
+      updateCartBar();
     };
 
     plus.onclick = function () {
       orderCart.push(name);
-      renderBottomCart();
+      updateCartBar();
     };
 
     remove.onclick = function () {
       orderCart = orderCart.filter((i) => i !== name);
-      renderBottomCart();
+      updateCartBar();
     };
 
     controls.appendChild(minus);
@@ -2137,7 +2177,8 @@ startOrder = function () {
         }
         */
   originalStartOrder();
-  showCartUI();
+  if (orderCart.length > 0) showCartUI();
+  scrollToBottom();
 };
 
 /* update cart panel when items added */
@@ -2145,6 +2186,11 @@ const originalUpdateCartBar = updateCartBar;
 updateCartBar = function () {
   originalUpdateCartBar();
   renderBottomCart();
+  if (orderFlowActive && orderCart.length > 0) {
+    showCartUI();
+  } else if (!orderCart.length) {
+    hideCartUI();
+  }
 };
 
 /* detect order intent */
@@ -2764,11 +2810,15 @@ function isMenuBrowsingIntent(text) {
   const query = normalizeChatText(text);
 
   return (
-    /\bco (moge|mozna) (u was )?(zamowic|zjesc)\b/.test(query) ||
+    /\bco (moge|mozna) (u was )?(zamowic|zjesc|dostac)\b/.test(query) ||
+    /\bco u was (dostane|zjem)\b/.test(query) ||
     /\bco macie\b/.test(query) ||
+    /\bco oferujecie\b/.test(query) ||
+    /\bjaka jest oferta\b/.test(query) ||
+    /\bjakie macie (dania|jedzenie)\b/.test(query) ||
     /\bjakie\b.*\bmacie\b/.test(query) ||
     /\bpokaz\b.*\b(menu|karte)\b/.test(query) ||
-    /\bco polecacie\b.*\bmenu\b/.test(query)
+    /\bco polecacie( z menu)?\b/.test(query)
   );
 }
 
