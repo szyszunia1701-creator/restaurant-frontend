@@ -1,6 +1,52 @@
 const RESTAURANT_NAME = "Wloska robota bistro";
 const API_BASE = "https://restaurant-backend-7i1c.onrender.com";
 
+let menuImages = [];
+let sandwichImages = [];
+
+async function saveMedia(key, urls) {
+  const response = await fetch(`${API_BASE}/save-media`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ key, urls }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Nie udało się zapisać listy ${key}.`);
+  }
+}
+
+async function uploadMediaFiles(files, folder) {
+  const urls = [];
+
+  for (const file of files) {
+    const formData = new FormData();
+    formData.append("image", file);
+    formData.append("folder", folder);
+
+    const response = await fetch(`${API_BASE}/upload-image`, {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Nie udało się przesłać pliku ${file.name}.`);
+    }
+
+    const data = await response.json();
+
+    if (!data.url) {
+      throw new Error(`Backend nie zwrócił URL dla pliku ${file.name}.`);
+    }
+
+    urls.push(data.url);
+  }
+
+  return urls;
+}
+
 /* ===== RESTAURANT STATUS SYSTEM ===== */
 function isRestaurantOpen() {
   const status = localStorage.getItem("restaurantOpen");
@@ -186,13 +232,13 @@ function isSandwichCommand(text) {
 function detectIntent(t) {
   if (isSandwichCommand(t)) return "daily";
   if (
-    /kanapka tygodnia|kanapka|specjal|promocja dnia|polecacie|co polecacie|co polecasz|co dzis polecacie/i.test(
+    /kanapka tygodnia|specjal|promocja dnia|polecacie|co polecacie|co polecasz|co dzis polecacie/i.test(
       t,
     )
   )
     return "daily";
   if (/hej|cześć|hello|siema/i.test(t)) return "greet";
-  if (/menu|pizza|dania|wega/i.test(t)) return "menu";
+  if (isMenuQuestion(t)) return "menu";
   if (/rezer|rezew|stolik|booking/i.test(t)) return "reserve";
   if (/anul|rezygn|cancel/i.test(t)) return "cancel";
   if (/godzin|otwar|czynne|której|kiedy|od któr|do któr/i.test(t))
@@ -472,7 +518,8 @@ function sendMsg() {
     return;
   }
   if (intent === "menu") {
-    showMenu();
+    addMsg(answerFromRestaurantData(text), "bot");
+    showMenuImages();
     return;
   }
   if (intent === "hours") {
@@ -578,11 +625,8 @@ const sandwichPreview = document.getElementById("sandwich-preview");
 
 function renderSandwichImages() {
   sandwichPreview.innerHTML = "";
-  const data = localStorage.getItem("sandwichImages");
-  if (!data) return;
-  const imgs = JSON.parse(data);
 
-  imgs.forEach((src, i) => {
+  sandwichImages.forEach((src, i) => {
     const wrap = document.createElement("div");
     wrap.style.position = "relative";
 
@@ -606,17 +650,20 @@ function renderSandwichImages() {
     del.style.height = "20px";
     del.style.cursor = "pointer";
 
-    del.onclick = function () {
-      imgs.splice(i, 1);
-
-      if (imgs.length === 0) {
-        localStorage.removeItem("sandwichImages");
-      } else {
-        localStorage.setItem("sandwichImages", JSON.stringify(imgs));
-      }
-
-      sandwichInput.value = "";
+    del.onclick = async function () {
+      const previousImages = [...sandwichImages];
+      sandwichImages.splice(i, 1);
       renderSandwichImages();
+
+      try {
+        await saveMedia("sandwichImages", sandwichImages);
+        sandwichInput.value = "";
+      } catch (error) {
+        sandwichImages = previousImages;
+        renderSandwichImages();
+        console.error(error);
+        alert("Nie udało się usunąć zdjęcia kanapki.");
+      }
     };
 
     wrap.appendChild(img);
@@ -626,22 +673,27 @@ function renderSandwichImages() {
 }
 
 if (sandwichInput) {
-  sandwichInput.addEventListener("change", function () {
-    const files = this.files;
+  sandwichInput.addEventListener("change", async function () {
+    const files = Array.from(this.files);
     if (!files.length) return;
 
-    const images = [];
-    Array.from(files).forEach((file) => {
-      const r = new FileReader();
-      r.onload = function (e) {
-        images.push(e.target.result);
-        if (images.length === files.length) {
-          localStorage.setItem("sandwichImages", JSON.stringify(images));
-          renderSandwichImages();
-        }
-      };
-      r.readAsDataURL(file);
-    });
+    const previousImages = [...sandwichImages];
+    this.disabled = true;
+
+    try {
+      const urls = await uploadMediaFiles(files, "sandwichImages");
+      sandwichImages.push(...urls);
+      await saveMedia("sandwichImages", sandwichImages);
+      renderSandwichImages();
+      this.value = "";
+    } catch (error) {
+      sandwichImages = previousImages;
+      renderSandwichImages();
+      console.error(error);
+      alert("Nie udało się przesłać zdjęć kanapki.");
+    } finally {
+      this.disabled = false;
+    }
   });
 }
 
@@ -658,39 +710,6 @@ if (saveAllBtn) {
     if (name) {
       const data = { name, price };
       localStorage.setItem("adminKanapkaTygodnia", JSON.stringify(data));
-    }
-
-    const files = sandwichInput.files;
-
-    /* zapis zdjęć menu */
-    if (
-      typeof menuUploadInput !== "undefined" &&
-      menuUploadInput.files.length
-    ) {
-      const menuImages = [];
-      Array.from(menuUploadInput.files).forEach((file) => {
-        const r = new FileReader();
-        r.onload = function (e) {
-          menuImages.push(e.target.result);
-          if (menuImages.length === menuUploadInput.files.length) {
-            localStorage.setItem("menuImages", JSON.stringify(menuImages));
-          }
-        };
-        r.readAsDataURL(file);
-      });
-    }
-    if (files.length) {
-      const images = [];
-      Array.from(files).forEach((file) => {
-        const r = new FileReader();
-        r.onload = function (e) {
-          images.push(e.target.result);
-          if (images.length === files.length) {
-            localStorage.setItem("sandwichImages", JSON.stringify(images));
-          }
-        };
-        r.readAsDataURL(file);
-      });
     }
 
     /* okno admin zamyka się ZAWSZE */
@@ -721,16 +740,12 @@ window.addEventListener("DOMContentLoaded", function () {
 });
 
 function showSandwichImages() {
-  const data = localStorage.getItem("sandwichImages");
-  if (!data) return;
-
-  const imgs = JSON.parse(data);
-  if (!imgs.length) return;
+  if (!sandwichImages.length) return;
 
   const container = document.createElement("div");
   container.className = "menu-images";
 
-  imgs.forEach((src) => {
+  sandwichImages.forEach((src) => {
     const im = document.createElement("img");
     im.src = src;
     im.onclick = () => openMenuModal(src);
@@ -741,18 +756,9 @@ function showSandwichImages() {
   messages.scrollTop = messages.scrollHeight;
 }
 
-/* ===== MENU IMAGE STORAGE ===== */
-function getMenuImages() {
-  const data = localStorage.getItem("menuImages");
-  if (!data) return [];
-  return JSON.parse(data);
-}
-
 /* ===== SHOW MENU IMAGES IN CHAT ===== */
 function showMenuImages() {
-  const imgs = getMenuImages();
-
-  if (!imgs.length) {
+  if (!menuImages.length) {
     addMsg("Menu nie zostało jeszcze dodane przez restaurację.", "bot");
     return;
   }
@@ -760,7 +766,7 @@ function showMenuImages() {
   const container = document.createElement("div");
   container.className = "menu-images";
 
-  imgs.forEach((src) => {
+  menuImages.forEach((src) => {
     const im = document.createElement("img");
     im.src = src;
     im.onclick = () => openMenuModal(src);
@@ -805,22 +811,27 @@ adminPanel.appendChild(menuUploadTitle);
 adminPanel.appendChild(menuUploadInput);
 
 /* natychmiastowy podgląd dodanych zdjęć menu */
-menuUploadInput.addEventListener("change", function () {
-  const files = this.files;
+menuUploadInput.addEventListener("change", async function () {
+  const files = Array.from(this.files);
   if (!files.length) return;
 
-  const images = [];
-  Array.from(files).forEach((file) => {
-    const r = new FileReader();
-    r.onload = function (e) {
-      images.push(e.target.result);
-      if (images.length === files.length) {
-        localStorage.setItem("menuImages", JSON.stringify(images));
-        renderAdminMenuImages();
-      }
-    };
-    r.readAsDataURL(file);
-  });
+  const previousImages = [...menuImages];
+  this.disabled = true;
+
+  try {
+    const urls = await uploadMediaFiles(files, "menuImages");
+    menuImages.push(...urls);
+    await saveMedia("menuImages", menuImages);
+    renderAdminMenuImages();
+    this.value = "";
+  } catch (error) {
+    menuImages = previousImages;
+    renderAdminMenuImages();
+    console.error(error);
+    alert("Nie udało się przesłać zdjęć menu.");
+  } finally {
+    this.disabled = false;
+  }
 });
 
 /* ===== ADMIN USUWANIE ZDJĘĆ MENU ===== */
@@ -833,11 +844,8 @@ adminPanel.appendChild(menuAdminPreview);
 
 function renderAdminMenuImages() {
   menuAdminPreview.innerHTML = "";
-  const data = localStorage.getItem("menuImages");
-  if (!data) return;
-  const imgs = JSON.parse(data);
 
-  imgs.forEach((src, i) => {
+  menuImages.forEach((src, i) => {
     const wrap = document.createElement("div");
     wrap.style.position = "relative";
 
@@ -861,10 +869,20 @@ function renderAdminMenuImages() {
     del.style.height = "20px";
     del.style.cursor = "pointer";
 
-    del.onclick = function () {
-      imgs.splice(i, 1);
-      localStorage.setItem("menuImages", JSON.stringify(imgs));
+    del.onclick = async function () {
+      const previousImages = [...menuImages];
+      menuImages.splice(i, 1);
       renderAdminMenuImages();
+
+      try {
+        await saveMedia("menuImages", menuImages);
+        menuUploadInput.value = "";
+      } catch (error) {
+        menuImages = previousImages;
+        renderAdminMenuImages();
+        console.error(error);
+        alert("Nie udało się usunąć zdjęcia menu.");
+      }
     };
 
     wrap.appendChild(im);
@@ -872,6 +890,26 @@ function renderAdminMenuImages() {
     menuAdminPreview.appendChild(wrap);
   });
 }
+
+async function loadMedia() {
+  try {
+    const response = await fetch(`${API_BASE}/media`);
+
+    if (!response.ok) {
+      throw new Error("Nie udało się pobrać zdjęć.");
+    }
+
+    const data = await response.json();
+    menuImages = data.menuImages || [];
+    sandwichImages = data.sandwichImages || [];
+    renderAdminMenuImages();
+    renderSandwichImages();
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+loadMedia();
 
 adminBtn.addEventListener("click", () => {
   setTimeout(renderSandwichImages, 200);
@@ -1325,13 +1363,7 @@ let orderData = {};
 let orderSubmitting = false;
 
 function clearChat() {
-  const firstMsg = messages.querySelector(".msg");
-  const firstQuick = messages.querySelector(".quick");
-
   messages.innerHTML = "";
-
-  if (firstMsg) messages.appendChild(firstMsg);
-  if (firstQuick) messages.appendChild(firstQuick);
 }
 
 function updateCartBar() {
@@ -1411,12 +1443,15 @@ function startOrder() {
     return;
   }
 
-  categories.forEach((cat, index) => {
+  if (!categories.includes(orderCategory)) {
+    orderCategory = categories[0];
+  }
+
+  categories.forEach((cat) => {
     const b = document.createElement("button");
     b.textContent = cat;
 
-    if (index === 0) {
-      orderCategory = cat;
+    if (cat === orderCategory) {
       b.classList.add("active");
     }
 
@@ -1440,38 +1475,14 @@ function startOrder() {
 
 function parseOrderItemDisplay(item) {
   const parts = item.split(" – ");
-  const rawName = parts[0] || item;
-  const price = parts[1] || "";
-
-  const sizeMatch = rawName.match(/\((mały|duży)\)$/i);
-
-  if (!sizeMatch) {
-    return {
-      name: rawName,
-      size: "",
-      price,
-    };
-  }
-
-  return {
-    name: rawName.replace(/\s*\((mały|duży)\)$/i, "").trim(),
-    size: sizeMatch[1],
-    price,
-  };
-}
-
-function parseOrderItemDisplay(item) {
-  const parts = item.split(" – ");
   let rawName = parts[0] || item;
   const price = parts[1] || "";
 
-  let size = "";
-
-  const sizeMatch = rawName.match(/\(([^)]+)\)\s*$/);
+  const sizeMatch = rawName.match(/\((mały|duży)\)\s*$/i);
+  const size = sizeMatch ? sizeMatch[1].toLowerCase() : "";
 
   if (sizeMatch) {
-    size = sizeMatch[1].trim();
-    rawName = rawName.replace(/\s*\([^)]+\)\s*$/, "").trim();
+    rawName = rawName.replace(/\s*\((mały|duży)\)\s*$/i, "").trim();
   }
 
   return {
@@ -1548,6 +1559,52 @@ function addProductToCart(item, quantity) {
   renderBottomCart();
 }
 
+function showQuantitySelector(item) {
+  clearChat();
+
+  const itemDisplay = parseOrderItemDisplay(item);
+
+  const card = document.createElement("div");
+  card.className = "quantity-card";
+
+  const title = document.createElement("div");
+  title.className = "quantity-title";
+  title.textContent = "🍕 Ile porcji chcesz zamówić?";
+
+  const product = document.createElement("div");
+  product.className = "quantity-product";
+  product.textContent = itemDisplay.name;
+
+  const qty = document.createElement("div");
+  qty.className = "quantity-options";
+
+  [1, 2, 3, 4].forEach((quantity) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "quantity-option";
+    button.textContent = quantity;
+    button.onclick = function () {
+      addProductToCart(item, quantity);
+    };
+    qty.appendChild(button);
+  });
+
+  const moreBtn = document.createElement("button");
+  moreBtn.type = "button";
+  moreBtn.className = "quantity-option more";
+  moreBtn.textContent = "więcej";
+  moreBtn.onclick = function () {
+    showMoreQuantitySelector(item);
+  };
+  qty.appendChild(moreBtn);
+
+  card.appendChild(title);
+  card.appendChild(product);
+  card.appendChild(qty);
+  messages.appendChild(card);
+  messages.scrollTop = messages.scrollHeight;
+}
+
 function showMoreQuantitySelector(item) {
   clearChat();
 
@@ -1588,7 +1645,7 @@ function showMoreQuantitySelector(item) {
   back.className = "quantity-more-back";
   back.textContent = "⬅ Wróć";
   back.onclick = function () {
-    showOrderItems();
+    showQuantitySelector(item);
   };
 
   card.appendChild(title);
@@ -1642,54 +1699,7 @@ function showOrderItems() {
     card.appendChild(p);
 
     card.onclick = function () {
-      clearChat();
-
-      const itemDisplay = parseOrderItemDisplay(item);
-
-      const cardBox = document.createElement("div");
-      cardBox.className = "quantity-card";
-
-      const title = document.createElement("div");
-      title.className = "quantity-title";
-      title.textContent = "🍕 Ile porcji chcesz zamówić?";
-
-      const product = document.createElement("div");
-      product.className = "quantity-product";
-      product.textContent = itemDisplay.name;
-
-      const qty = document.createElement("div");
-      qty.className = "quantity-options";
-
-      [1, 2, 3, 4].forEach((n) => {
-        const b = document.createElement("button");
-        b.type = "button";
-        b.className = "quantity-option";
-        b.textContent = n;
-
-        b.onclick = function () {
-          addProductToCart(item, n);
-        };
-
-        qty.appendChild(b);
-      });
-
-      const moreBtn = document.createElement("button");
-      moreBtn.type = "button";
-      moreBtn.className = "quantity-option more";
-      moreBtn.textContent = "więcej";
-
-      moreBtn.onclick = function () {
-        showMoreQuantitySelector(item);
-      };
-
-      qty.appendChild(moreBtn);
-
-      cardBox.appendChild(title);
-      cardBox.appendChild(product);
-      cardBox.appendChild(qty);
-
-      messages.appendChild(cardBox);
-      messages.scrollTop = messages.scrollHeight;
+      showQuantitySelector(item);
     };
 
     container.appendChild(card);
@@ -2685,10 +2695,25 @@ function normalizeChatText(value) {
     .trim();
 }
 
+function isMenuQuestion(text) {
+  const query = normalizeChatText(text);
+
+  if (
+    /\b(menu|karta|jedzenie|dani|potraw|produkt|cen|koszt|wege|wega|bez miesa)\w*\b/.test(
+      query,
+    ) ||
+    /\b(czy (macie|jest)|macie cos|jakie macie|co macie)\b/.test(query)
+  ) {
+    return true;
+  }
+
+  return findMenuMatches(text).length > 0;
+}
+
 function formatCurrentMenu() {
   const menu = getAdminMenu();
 
-  if (!menu || !Object.keys(menu).length) {
+  if (!menu || !getMenuItemsForSearch().length) {
     return "Menu nie zostało jeszcze uzupełnione przez restaurację.";
   }
 
@@ -2697,7 +2722,9 @@ function formatCurrentMenu() {
   Object.keys(menu).forEach((category) => {
     msg += "\n" + category.toUpperCase() + ":\n";
 
-    menu[category].forEach((product) => {
+    const products = Array.isArray(menu[category]) ? menu[category] : [];
+
+    products.forEach((product) => {
       if (product.sizes) {
         msg +=
           "• " +
@@ -2721,7 +2748,9 @@ function getMenuItemsForSearch() {
   const items = [];
 
   Object.keys(menu).forEach((category) => {
-    menu[category].forEach((product) => {
+    const products = Array.isArray(menu[category]) ? menu[category] : [];
+
+    products.forEach((product) => {
       let priceText = "";
 
       if (product.sizes) {
@@ -2768,6 +2797,11 @@ function findMenuMatches(text) {
     "menu",
     "danie",
     "dania",
+    "cos",
+    "co",
+    "mnie",
+    "interesuje",
+    "prosze",
   ];
 
   const words = query
@@ -2781,7 +2815,9 @@ function findMenuMatches(text) {
       let score = 0;
 
       words.forEach((word) => {
-        if (item.searchText.includes(word)) {
+        const stem = word.length > 4 ? word.slice(0, -1) : word;
+
+        if (item.searchText.includes(word) || item.searchText.includes(stem)) {
           score++;
         }
       });
@@ -2798,6 +2834,7 @@ function findMenuMatches(text) {
 
 function answerFromRestaurantData(text) {
   const query = normalizeChatText(text);
+  const menuItems = getMenuItemsForSearch();
 
   if (/godzin|otwar|czynne|zamkn|ktorej|kiedy/.test(query)) {
     return "⏰ Godziny otwarcia:\nPon–Czw 12–22\nPt–Nd 12–23";
@@ -2811,11 +2848,11 @@ function answerFromRestaurantData(text) {
     return "📅 Mogę pomóc w rezerwacji stolika. Kliknij „📅 Rezerwacja” albo napisz, na jaki dzień chcesz zarezerwować stolik.";
   }
 
-  if (
-    /menu|karta|jedzenie|dania|pizza|makaron|burger|kanap|cena|koszt|macie|wege|wega|bez miesa|bez mięsa/.test(
-      query,
-    )
-  ) {
+  if (isMenuQuestion(text)) {
+    if (!menuItems.length) {
+      return "Menu nie zostało jeszcze uzupełnione przez restaurację.";
+    }
+
     const matches = findMenuMatches(text);
 
     if (matches.length) {
@@ -2838,7 +2875,7 @@ function answerFromRestaurantData(text) {
       return msg.trim();
     }
 
-    if (/menu|karta|dania|jedzenie/.test(query)) {
+    if (/\b(menu|karta|jedzenie)\b|\b(co|jakie) macie\b/.test(query)) {
       return formatCurrentMenu();
     }
 
