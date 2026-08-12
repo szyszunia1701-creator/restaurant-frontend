@@ -232,13 +232,13 @@ function isSandwichCommand(text) {
 function detectIntent(t) {
   if (isSandwichCommand(t)) return "daily";
   if (
-    /kanapka tygodnia|kanapka|specjal|promocja dnia|polecacie|co polecacie|co polecasz|co dzis polecacie/i.test(
+    /kanapka tygodnia|specjal|promocja dnia|polecacie|co polecacie|co polecasz|co dzis polecacie/i.test(
       t,
     )
   )
     return "daily";
   if (/hej|cześć|hello|siema/i.test(t)) return "greet";
-  if (/menu|pizza|dania|wega/i.test(t)) return "menu";
+  if (isMenuQuestion(t)) return "menu";
   if (/rezer|rezew|stolik|booking/i.test(t)) return "reserve";
   if (/anul|rezygn|cancel/i.test(t)) return "cancel";
   if (/godzin|otwar|czynne|której|kiedy|od któr|do któr/i.test(t))
@@ -518,7 +518,8 @@ function sendMsg() {
     return;
   }
   if (intent === "menu") {
-    showMenu();
+    addMsg(answerFromRestaurantData(text), "bot");
+    showMenuImages();
     return;
   }
   if (intent === "hours") {
@@ -2694,10 +2695,25 @@ function normalizeChatText(value) {
     .trim();
 }
 
+function isMenuQuestion(text) {
+  const query = normalizeChatText(text);
+
+  if (
+    /\b(menu|karta|jedzenie|dani|potraw|produkt|cen|koszt|wege|wega|bez miesa)\w*\b/.test(
+      query,
+    ) ||
+    /\b(czy (macie|jest)|macie cos|jakie macie|co macie)\b/.test(query)
+  ) {
+    return true;
+  }
+
+  return findMenuMatches(text).length > 0;
+}
+
 function formatCurrentMenu() {
   const menu = getAdminMenu();
 
-  if (!menu || !Object.keys(menu).length) {
+  if (!menu || !getMenuItemsForSearch().length) {
     return "Menu nie zostało jeszcze uzupełnione przez restaurację.";
   }
 
@@ -2706,7 +2722,9 @@ function formatCurrentMenu() {
   Object.keys(menu).forEach((category) => {
     msg += "\n" + category.toUpperCase() + ":\n";
 
-    menu[category].forEach((product) => {
+    const products = Array.isArray(menu[category]) ? menu[category] : [];
+
+    products.forEach((product) => {
       if (product.sizes) {
         msg +=
           "• " +
@@ -2730,7 +2748,9 @@ function getMenuItemsForSearch() {
   const items = [];
 
   Object.keys(menu).forEach((category) => {
-    menu[category].forEach((product) => {
+    const products = Array.isArray(menu[category]) ? menu[category] : [];
+
+    products.forEach((product) => {
       let priceText = "";
 
       if (product.sizes) {
@@ -2777,6 +2797,11 @@ function findMenuMatches(text) {
     "menu",
     "danie",
     "dania",
+    "cos",
+    "co",
+    "mnie",
+    "interesuje",
+    "prosze",
   ];
 
   const words = query
@@ -2790,7 +2815,9 @@ function findMenuMatches(text) {
       let score = 0;
 
       words.forEach((word) => {
-        if (item.searchText.includes(word)) {
+        const stem = word.length > 4 ? word.slice(0, -1) : word;
+
+        if (item.searchText.includes(word) || item.searchText.includes(stem)) {
           score++;
         }
       });
@@ -2807,6 +2834,7 @@ function findMenuMatches(text) {
 
 function answerFromRestaurantData(text) {
   const query = normalizeChatText(text);
+  const menuItems = getMenuItemsForSearch();
 
   if (/godzin|otwar|czynne|zamkn|ktorej|kiedy/.test(query)) {
     return "⏰ Godziny otwarcia:\nPon–Czw 12–22\nPt–Nd 12–23";
@@ -2820,11 +2848,11 @@ function answerFromRestaurantData(text) {
     return "📅 Mogę pomóc w rezerwacji stolika. Kliknij „📅 Rezerwacja” albo napisz, na jaki dzień chcesz zarezerwować stolik.";
   }
 
-  if (
-    /menu|karta|jedzenie|dania|pizza|makaron|burger|kanap|cena|koszt|macie|wege|wega|bez miesa|bez mięsa/.test(
-      query,
-    )
-  ) {
+  if (isMenuQuestion(text)) {
+    if (!menuItems.length) {
+      return "Menu nie zostało jeszcze uzupełnione przez restaurację.";
+    }
+
     const matches = findMenuMatches(text);
 
     if (matches.length) {
@@ -2847,7 +2875,7 @@ function answerFromRestaurantData(text) {
       return msg.trim();
     }
 
-    if (/menu|karta|dania|jedzenie/.test(query)) {
+    if (/\b(menu|karta|jedzenie)\b|\b(co|jakie) macie\b/.test(query)) {
       return formatCurrentMenu();
     }
 
