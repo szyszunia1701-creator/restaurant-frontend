@@ -794,6 +794,10 @@ button,
   z-index: 20;
 }
 
+#chat-sticky-actions.is-hidden {
+  display: none;
+}
+
 #chat-sticky-actions button {
   flex: 1 1 0;
   min-width: 0;
