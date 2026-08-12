@@ -109,6 +109,7 @@ toggle.onclick = () => {
   clearTimeout(hintTimeout);
 
   if (!box.classList.contains("open")) {
+    hideStickyActions();
     orderFlowActive = false;
     orderStep = null;
     messages.innerHTML = "";
@@ -122,9 +123,12 @@ toggle.onclick = () => {
     document.getElementById("chat-input").style.display = "flex";
   }
 
+  updateStickyActionsVisibility();
+
 };
 
 closeBtn.onclick = () => {
+  hideStickyActions();
   box.classList.remove("open");
   orderFlowActive = false;
   orderStep = null;
@@ -137,11 +141,18 @@ function resetReservation() {
   reservation = {};
 }
 
+function cancelReservation() {
+  resetReservation();
+  addMsg("Rezerwacja została przerwana. W czym mogę pomóc?", "bot");
+  addQuick();
+}
+
 function addMsg(text, cls) {
   const d = document.createElement("div");
   d.className = "msg " + cls;
   d.textContent = text;
   messages.appendChild(d);
+  updateStickyActionsVisibility();
   scrollToBottom();
 }
 
@@ -171,6 +182,7 @@ function createStickyQuickActions() {
 
   const actionBar = document.createElement("div");
   actionBar.id = "chat-sticky-actions";
+  actionBar.classList.add("is-hidden");
   actionBar.setAttribute("aria-label", "Szybkie akcje");
 
   [
@@ -189,6 +201,34 @@ function createStickyQuickActions() {
 }
 
 createStickyQuickActions();
+
+function hideStickyActions() {
+  const actionBar = document.getElementById("chat-sticky-actions");
+  if (actionBar) actionBar.classList.add("is-hidden");
+}
+
+function showStickyActions() {
+  const actionBar = document.getElementById("chat-sticky-actions");
+  if (actionBar) actionBar.classList.remove("is-hidden");
+}
+
+function updateStickyActionsVisibility() {
+  const normalConversationIsLongEnough =
+    messages.querySelectorAll(".msg.user").length >= 2;
+  const isNormalConversation =
+    box.classList.contains("open") &&
+    normalConversationIsLongEnough &&
+    orderFlowActive !== true &&
+    !orderStep &&
+    !reservationStep &&
+    !cancelStep;
+
+  if (isNormalConversation) {
+    showStickyActions();
+  } else {
+    hideStickyActions();
+  }
+}
 
 function enableCategoryBarScroll(bar) {
   if (!bar || bar.dataset.scrollReady === "true") return;
@@ -239,6 +279,7 @@ function addQuick() {
     q.appendChild(b);
   });
   messages.appendChild(q);
+  updateStickyActionsVisibility();
   scrollToBottom();
 }
 
@@ -291,7 +332,8 @@ function detectIntent(t) {
     return "daily";
   if (/hej|cześć|hello|siema/i.test(t)) return "greet";
   if (/rezer|rezew|stolik|booking/i.test(t)) return "reserve";
-  if (/anul|rezygn|cancel/i.test(t)) return "cancel";
+  if (/anul|rezygn|cancel|przerwij|stop|wyjdź|wyjdz|wróć|wroc/i.test(t))
+    return "cancel";
   if (/godzin|otwar|czynne|której|kiedy|od któr|do któr/i.test(t))
     return "hours";
   if (/kontakt|telefon|adres/i.test(t)) return "contact";
@@ -369,6 +411,7 @@ function startReservation() {
   orderStep = null;
   orderCategory = null;
   reservationStep = "date";
+  hideStickyActions();
   addMsg("📅 Na jaki dzień chcesz zarezerwować stolik?", "bot");
 }
 
@@ -378,6 +421,7 @@ function startCancel() {
   orderCategory = null;
   cancelData = {};
   cancelStep = "lastname";
+  hideStickyActions();
   addMsg("Aby anulować rezerwację, podaj nazwisko:", "bot");
 }
 
@@ -1454,7 +1498,10 @@ function getCartTotal() {
 const ORDER_CATEGORIES = {};
 
 function startOrder() {
+  resetReservation();
+  cancelStep = null;
   orderFlowActive = true;
+  hideStickyActions();
   document.getElementById("chat-input").style.display = "none";
 
   messages.innerHTML = "";
@@ -1619,6 +1666,7 @@ function addProductToCart(item, quantity) {
 }
 
 function showQuantitySelector(item) {
+  hideStickyActions();
   clearChat();
 
   const itemDisplay = parseOrderItemDisplay(item);
@@ -1674,6 +1722,7 @@ function showQuantitySelector(item) {
 }
 
 function showMoreQuantitySelector(item) {
+  hideStickyActions();
   clearChat();
 
   const itemDisplay = parseOrderItemDisplay(item);
@@ -1727,6 +1776,7 @@ function showMoreQuantitySelector(item) {
 }
 
 function showOrderItems() {
+  hideStickyActions();
   orderStep = "items";
 
   /* remove previous category items so new category replaces them */
@@ -1869,6 +1919,8 @@ function handleOrder(text) {
     const backBtn = document.createElement("button");
     backBtn.textContent = "Wróć do czatu";
     backBtn.onclick = function () {
+      orderFlowActive = false;
+      orderStep = null;
       messages.innerHTML = "";
       addMsg(`Cześć 👋 Jestem asystentem ${RESTAURANT_NAME}.`, "bot");
       addQuick();
@@ -1946,6 +1998,7 @@ function showOrderSuccessScreen(msg) {
 }
 
 function showCart() {
+  hideStickyActions();
   clearChat();
 
   if (!orderCart.length) {
@@ -1969,6 +2022,8 @@ function showCart() {
   const backBtn = document.createElement("button");
   backBtn.textContent = "Wróć do czatu";
   backBtn.onclick = function () {
+    orderFlowActive = false;
+    orderStep = null;
     messages.innerHTML = "";
     addMsg(`Cześć 👋 Jestem asystentem ${RESTAURANT_NAME}.`, "bot");
     addQuick();
@@ -2158,6 +2213,9 @@ function renderBottomCart() {
 
 const originalStartOrder = startOrder;
 startOrder = function () {
+  resetReservation();
+  cancelStep = null;
+
   if (!isRestaurantOpen()) {
     addMsg("❌ Restauracja jest obecnie zamknięta.", "bot");
     return;
@@ -2207,6 +2265,7 @@ function isOrderIntent(text) {
   const query = normalizeChatText(text);
 
   return (
+    /^(zamow|zamow jedzenie|zamowienie)$/.test(query) ||
     /\b(chce|chcialbym|chcialabym)\b.*\b(zamowic|zlozyc zamowienie)\b/.test(
       query,
     ) ||
@@ -2226,7 +2285,27 @@ sendMsg = function () {
   const lower = text.toLowerCase();
   const intent = detectIntent(lower);
 
-  /* rezerwacja i anulowanie mają pierwszeństwo przed zamówieniami */
+  /* Global actions always interrupt an active conversational flow. */
+  if (reservationStep && intent === "cancel") {
+    input.value = "";
+    addMsg(text, "user");
+    cancelReservation();
+    return;
+  }
+
+  if (["menu", "hours", "contact", "reserve"].includes(intent)) {
+    oldSendMsg();
+    return;
+  }
+
+  if (intent === "order") {
+    input.value = "";
+    addMsg(text, "user");
+    startOrder();
+    return;
+  }
+
+  /* Only non-global input is interpreted as the current flow's next step. */
   if (reservationStep) {
     input.value = "";
     addMsg(text, "user");
@@ -2238,14 +2317,6 @@ sendMsg = function () {
     input.value = "";
     addMsg(text, "user");
     handleCancel(text);
-    return;
-  }
-
-  /* start order by text */
-  if (intent === "order") {
-    input.value = "";
-    addMsg(text, "user");
-    startOrder();
     return;
   }
 
