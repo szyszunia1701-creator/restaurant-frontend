@@ -36,7 +36,13 @@ input {
   font-family: inherit;
 }
 
-button {
+#chat-toggle,
+#chat-toggle img,
+#bottom-cart-bar,
+button,
+.product-card,
+.category-bar,
+.category-bar button {
   -webkit-tap-highlight-color: transparent;
 }
 
