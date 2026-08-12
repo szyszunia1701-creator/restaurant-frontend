@@ -753,26 +753,28 @@ button,
 }
 
 .quick button.quick-order-main {
-  border-color: #c79218;
-  background: linear-gradient(135deg, #f8df83, #d5a629 58%, #b9830d);
-  color: #3f2b00;
-  box-shadow: 0 7px 18px rgba(183, 130, 10, 0.28);
+  border-color: var(--brand-red-dark);
+  background: linear-gradient(135deg, var(--brand-red), var(--brand-red-dark));
+  color: #fff;
+  box-shadow: 0 7px 18px rgba(139, 0, 0, 0.22);
   animation: quickOrderGlow 2.8s ease-in-out infinite;
 }
 
 .quick button.quick-order-main:hover {
-  border-color: #d7a924;
-  background: linear-gradient(135deg, #ffe99a, #ddaf31 58%, #c38d13);
-  color: #302000;
+  border-color: var(--brand-red);
+  background: linear-gradient(135deg, var(--brand-red-dark), var(--brand-red));
+  color: #fff;
 }
 
 @keyframes quickOrderGlow {
   0%,
   100% {
-    box-shadow: 0 7px 18px rgba(183, 130, 10, 0.25);
+    box-shadow: 0 7px 18px rgba(139, 0, 0, 0.2);
   }
   50% {
-    box-shadow: 0 9px 24px rgba(210, 157, 28, 0.42);
+    box-shadow:
+      0 8px 20px rgba(139, 0, 0, 0.28),
+      0 0 0 3px rgba(139, 0, 0, 0.08);
   }
 }
 
