@@ -1325,13 +1325,7 @@ let orderData = {};
 let orderSubmitting = false;
 
 function clearChat() {
-  const firstMsg = messages.querySelector(".msg");
-  const firstQuick = messages.querySelector(".quick");
-
   messages.innerHTML = "";
-
-  if (firstMsg) messages.appendChild(firstMsg);
-  if (firstQuick) messages.appendChild(firstQuick);
 }
 
 function updateCartBar() {
@@ -1411,12 +1405,15 @@ function startOrder() {
     return;
   }
 
-  categories.forEach((cat, index) => {
+  if (!categories.includes(orderCategory)) {
+    orderCategory = categories[0];
+  }
+
+  categories.forEach((cat) => {
     const b = document.createElement("button");
     b.textContent = cat;
 
-    if (index === 0) {
-      orderCategory = cat;
+    if (cat === orderCategory) {
       b.classList.add("active");
     }
 
@@ -1440,38 +1437,14 @@ function startOrder() {
 
 function parseOrderItemDisplay(item) {
   const parts = item.split(" – ");
-  const rawName = parts[0] || item;
-  const price = parts[1] || "";
-
-  const sizeMatch = rawName.match(/\((mały|duży)\)$/i);
-
-  if (!sizeMatch) {
-    return {
-      name: rawName,
-      size: "",
-      price,
-    };
-  }
-
-  return {
-    name: rawName.replace(/\s*\((mały|duży)\)$/i, "").trim(),
-    size: sizeMatch[1],
-    price,
-  };
-}
-
-function parseOrderItemDisplay(item) {
-  const parts = item.split(" – ");
   let rawName = parts[0] || item;
   const price = parts[1] || "";
 
-  let size = "";
-
-  const sizeMatch = rawName.match(/\(([^)]+)\)\s*$/);
+  const sizeMatch = rawName.match(/\((mały|duży)\)\s*$/i);
+  const size = sizeMatch ? sizeMatch[1].toLowerCase() : "";
 
   if (sizeMatch) {
-    size = sizeMatch[1].trim();
-    rawName = rawName.replace(/\s*\([^)]+\)\s*$/, "").trim();
+    rawName = rawName.replace(/\s*\((mały|duży)\)\s*$/i, "").trim();
   }
 
   return {
@@ -1548,6 +1521,52 @@ function addProductToCart(item, quantity) {
   renderBottomCart();
 }
 
+function showQuantitySelector(item) {
+  clearChat();
+
+  const itemDisplay = parseOrderItemDisplay(item);
+
+  const card = document.createElement("div");
+  card.className = "quantity-card";
+
+  const title = document.createElement("div");
+  title.className = "quantity-title";
+  title.textContent = "🍕 Ile porcji chcesz zamówić?";
+
+  const product = document.createElement("div");
+  product.className = "quantity-product";
+  product.textContent = itemDisplay.name;
+
+  const qty = document.createElement("div");
+  qty.className = "quantity-options";
+
+  [1, 2, 3, 4].forEach((quantity) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "quantity-option";
+    button.textContent = quantity;
+    button.onclick = function () {
+      addProductToCart(item, quantity);
+    };
+    qty.appendChild(button);
+  });
+
+  const moreBtn = document.createElement("button");
+  moreBtn.type = "button";
+  moreBtn.className = "quantity-option more";
+  moreBtn.textContent = "więcej";
+  moreBtn.onclick = function () {
+    showMoreQuantitySelector(item);
+  };
+  qty.appendChild(moreBtn);
+
+  card.appendChild(title);
+  card.appendChild(product);
+  card.appendChild(qty);
+  messages.appendChild(card);
+  messages.scrollTop = messages.scrollHeight;
+}
+
 function showMoreQuantitySelector(item) {
   clearChat();
 
@@ -1588,7 +1607,7 @@ function showMoreQuantitySelector(item) {
   back.className = "quantity-more-back";
   back.textContent = "⬅ Wróć";
   back.onclick = function () {
-    showOrderItems();
+    showQuantitySelector(item);
   };
 
   card.appendChild(title);
@@ -1642,54 +1661,7 @@ function showOrderItems() {
     card.appendChild(p);
 
     card.onclick = function () {
-      clearChat();
-
-      const itemDisplay = parseOrderItemDisplay(item);
-
-      const cardBox = document.createElement("div");
-      cardBox.className = "quantity-card";
-
-      const title = document.createElement("div");
-      title.className = "quantity-title";
-      title.textContent = "🍕 Ile porcji chcesz zamówić?";
-
-      const product = document.createElement("div");
-      product.className = "quantity-product";
-      product.textContent = itemDisplay.name;
-
-      const qty = document.createElement("div");
-      qty.className = "quantity-options";
-
-      [1, 2, 3, 4].forEach((n) => {
-        const b = document.createElement("button");
-        b.type = "button";
-        b.className = "quantity-option";
-        b.textContent = n;
-
-        b.onclick = function () {
-          addProductToCart(item, n);
-        };
-
-        qty.appendChild(b);
-      });
-
-      const moreBtn = document.createElement("button");
-      moreBtn.type = "button";
-      moreBtn.className = "quantity-option more";
-      moreBtn.textContent = "więcej";
-
-      moreBtn.onclick = function () {
-        showMoreQuantitySelector(item);
-      };
-
-      qty.appendChild(moreBtn);
-
-      cardBox.appendChild(title);
-      cardBox.appendChild(product);
-      cardBox.appendChild(qty);
-
-      messages.appendChild(cardBox);
-      messages.scrollTop = messages.scrollHeight;
+      showQuantitySelector(item);
     };
 
     container.appendChild(card);
