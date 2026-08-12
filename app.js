@@ -108,6 +108,7 @@ toggle.onclick = () => {
   clearTimeout(hintTimeout);
 
   if (!box.classList.contains("open")) {
+    hideCartUI();
     return;
   }
 
@@ -117,14 +118,11 @@ toggle.onclick = () => {
     document.getElementById("chat-input").style.display = "flex";
   }
 
-  if (orderCart.length > 0 || orderStep) {
-    showCartUI();
-    renderBottomCart();
-  }
 };
 
 closeBtn.onclick = () => {
   box.classList.remove("open");
+  hideCartUI();
 };
 
 function resetReservation() {
@@ -932,6 +930,10 @@ function showCartUI() {
   const panel = document.getElementById("bottom-cart-panel");
   const arrow = document.getElementById("cart-arrow");
 
+  if (typeof updateCartBar === "function") {
+    updateCartBar();
+  }
+
   if (panel) {
     panel.style.display = "block";
     panel.classList.remove("open");
@@ -1359,9 +1361,16 @@ function showCartUI() {
 
 function hideCartUI() {
   const panel = document.getElementById("bottom-cart-panel");
+  const bar = document.getElementById("cart-bar");
+
   if (panel) {
     panel.classList.remove("open");
     panel.style.display = "none";
+  }
+
+  if (bar) {
+    bar.style.display = "none";
+    messages.style.marginTop = "0px";
   }
 }
 
@@ -1436,6 +1445,7 @@ function startOrder() {
   back.style.transform = "translateY(-50%)";
 
   back.onclick = function () {
+    orderStep = null;
     messages.innerHTML = "";
     addMsg(`Cześć 👋 Jestem asystentem ${RESTAURANT_NAME}.`, "bot");
     addQuick();
@@ -1609,9 +1619,18 @@ function showQuantitySelector(item) {
   };
   qty.appendChild(moreBtn);
 
+  const back = document.createElement("button");
+  back.type = "button";
+  back.className = "quantity-more-back";
+  back.textContent = "⬅ Wróć";
+  back.onclick = function () {
+    startOrder();
+  };
+
   card.appendChild(title);
   card.appendChild(product);
   card.appendChild(qty);
+  card.appendChild(back);
   messages.appendChild(card);
   messages.scrollTop = messages.scrollHeight;
 }
@@ -1656,7 +1675,7 @@ function showMoreQuantitySelector(item) {
   back.className = "quantity-more-back";
   back.textContent = "⬅ Wróć";
   back.onclick = function () {
-    showQuantitySelector(item);
+    startOrder();
   };
 
   card.appendChild(title);
@@ -2142,12 +2161,10 @@ function isOrderIntent(text) {
   const query = normalizeChatText(text);
 
   return (
-    /\b(chce|chcialbym|chcialabym|zamawiam)\b.*\b(zamowic|zamowienie|jedzenie)\b/.test(
+    /\b(chce|chcialbym|chcialabym)\b.*\b(zamowic|zlozyc zamowienie)\b/.test(
       query,
     ) ||
-    /\bjak\b.*\bzamowic\b/.test(query) ||
-    /\bczy moge\b.*\b(cos )?zamowic\b/.test(query) ||
-    /\bzlozyc\b.*\bzamowienie\b/.test(query) ||
+    /\bzamawiam\b/.test(query) ||
     /\b(poprosze|wezme)\b\s+\S+/.test(query)
   );
 }
@@ -2748,7 +2765,9 @@ function isMenuBrowsingIntent(text) {
 
   return (
     /\bco (moge|mozna) (u was )?(zamowic|zjesc)\b/.test(query) ||
-    /\b(co macie do zamowienia|jakie jedzenie macie|pokaz menu)\b/.test(query) ||
+    /\bco macie\b/.test(query) ||
+    /\bjakie\b.*\bmacie\b/.test(query) ||
+    /\bpokaz\b.*\b(menu|karte)\b/.test(query) ||
     /\bco polecacie\b.*\bmenu\b/.test(query)
   );
 }
@@ -2889,6 +2908,12 @@ function answerFromRestaurantData(text) {
 
   if (/rezerw|stolik|booking/.test(query)) {
     return "📅 Mogę pomóc w rezerwacji stolika. Kliknij „📅 Rezerwacja” albo napisz, na jaki dzień chcesz zarezerwować stolik.";
+  }
+
+  // Pytanie o ofertę ma pierwszeństwo przed wyszukiwaniem nazwy produktu.
+  // Dzięki temu słowa z całego zdania nie są traktowane jak nazwa dania.
+  if (isMenuBrowsingIntent(text)) {
+    return formatCurrentMenu();
   }
 
   if (isMenuQuestion(text)) {
