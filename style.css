@@ -573,12 +573,29 @@ button,
   transform: translateY(10px);
   transition: 0.3s;
   pointer-events: none;
+  max-width: 280px;
+  line-height: 1.35;
 }
 
 #chat-hint.show {
   opacity: 1;
   transform: none;
   animation: pulseBubble 1.6s ease-in-out infinite;
+}
+
+#chat-hint strong,
+#chat-hint span {
+  display: block;
+}
+
+#chat-hint strong {
+  margin-bottom: 3px;
+  color: #6f4e00;
+  font-size: 14px;
+}
+
+#chat-hint span {
+  color: #4b4b4b;
 }
 
 @keyframes pulseBubble {
@@ -733,6 +750,30 @@ button,
 
 .quick button:active {
   transform: translateY(0) scale(0.98);
+}
+
+.quick button.quick-order-main {
+  border-color: #c79218;
+  background: linear-gradient(135deg, #f8df83, #d5a629 58%, #b9830d);
+  color: #3f2b00;
+  box-shadow: 0 7px 18px rgba(183, 130, 10, 0.28);
+  animation: quickOrderGlow 2.8s ease-in-out infinite;
+}
+
+.quick button.quick-order-main:hover {
+  border-color: #d7a924;
+  background: linear-gradient(135deg, #ffe99a, #ddaf31 58%, #c38d13);
+  color: #302000;
+}
+
+@keyframes quickOrderGlow {
+  0%,
+  100% {
+    box-shadow: 0 7px 18px rgba(183, 130, 10, 0.25);
+  }
+  50% {
+    box-shadow: 0 9px 24px rgba(210, 157, 28, 0.42);
+  }
 }
 
 #chat-input {

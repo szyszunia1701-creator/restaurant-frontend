@@ -94,6 +94,14 @@ const hintTimeout = setTimeout(() => {
   setTimeout(() => hint.classList.remove("show"), 6000);
 }, 700);
 
+hint.replaceChildren();
+const hintTitle = document.createElement("strong");
+hintTitle.textContent = "👋 Potrzebujesz pomocy?";
+const hintDescription = document.createElement("span");
+hintDescription.textContent =
+  "Zamów jedzenie, sprawdź menu lub zarezerwuj stolik";
+hint.append(hintTitle, hintDescription);
+
 toggle.onclick = () => {
   box.classList.toggle("open");
   hint.classList.remove("show");
@@ -178,6 +186,9 @@ function addQuick() {
   ].forEach((t) => {
     const b = document.createElement("button");
     b.textContent = t;
+    if (t === "🛒 Zamów jedzenie") {
+      b.classList.add("quick-order-main");
+    }
     b.onclick = () => {
       if (t.includes("Zamów")) {
         startOrder();
@@ -230,6 +241,7 @@ function isSandwichCommand(text) {
 }
 
 function detectIntent(t) {
+  if (isMenuBrowsingIntent(t)) return "menu";
   if (isSandwichCommand(t)) return "daily";
   if (
     /kanapka tygodnia|specjal|promocja dnia|polecacie|co polecacie|co polecasz|co dzis polecacie/i.test(
@@ -238,7 +250,6 @@ function detectIntent(t) {
   )
     return "daily";
   if (/hej|cześć|hello|siema/i.test(t)) return "greet";
-  if (isMenuQuestion(t)) return "menu";
   if (/rezer|rezew|stolik|booking/i.test(t)) return "reserve";
   if (/anul|rezygn|cancel/i.test(t)) return "cancel";
   if (/godzin|otwar|czynne|której|kiedy|od któr|do któr/i.test(t))
@@ -2121,10 +2132,25 @@ updateCartBar = function () {
 const oldDetectIntent = detectIntent;
 
 detectIntent = function (t) {
-  if (/zamow|zamów|order|zamowienie|zamówienie/i.test(t)) return "order";
+  if (isMenuBrowsingIntent(t)) return "menu";
+  if (isOrderIntent(t)) return "order";
 
   return oldDetectIntent(t);
 };
+
+function isOrderIntent(text) {
+  const query = normalizeChatText(text);
+
+  return (
+    /\b(chce|chcialbym|chcialabym|zamawiam)\b.*\b(zamowic|zamowienie|jedzenie)\b/.test(
+      query,
+    ) ||
+    /\bjak\b.*\bzamowic\b/.test(query) ||
+    /\bczy moge\b.*\b(cos )?zamowic\b/.test(query) ||
+    /\bzlozyc\b.*\bzamowienie\b/.test(query) ||
+    /\b(poprosze|wezme)\b\s+\S+/.test(query)
+  );
+}
 
 /* hook into sendMsg */
 
@@ -2171,6 +2197,9 @@ sendMsg = function () {
   /* otherwise normal chatbot */
   oldSendMsg();
 };
+
+/* Keep click and Enter on the same, final sendMsg implementation. */
+send.onclick = sendMsg;
 
 /* === BUILD SECOND EMPTY ADMIN COLUMN === */
 window.addEventListener("DOMContentLoaded", function () {
@@ -2690,6 +2719,7 @@ function normalizeChatText(value) {
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
+    .replace(/ł/g, "l")
     .replace(/[^\w\s]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
@@ -2702,12 +2732,25 @@ function isMenuQuestion(text) {
     /\b(menu|karta|jedzenie|dani|potraw|produkt|cen|koszt|wege|wega|bez miesa)\w*\b/.test(
       query,
     ) ||
-    /\b(czy (macie|jest)|macie cos|jakie macie|co macie)\b/.test(query)
+    /\b(czy (macie|jest)|macie cos|jakie macie|co macie)\b/.test(query) ||
+    /\bco (moge|mozna) (u was )?(zamowic|zjesc)\b/.test(query) ||
+    /\b(co macie do zamowienia|jakie jedzenie macie|pokaz menu)\b/.test(query) ||
+    /\bco polecacie\b.*\bmenu\b/.test(query)
   ) {
     return true;
   }
 
   return findMenuMatches(text).length > 0;
+}
+
+function isMenuBrowsingIntent(text) {
+  const query = normalizeChatText(text);
+
+  return (
+    /\bco (moge|mozna) (u was )?(zamowic|zjesc)\b/.test(query) ||
+    /\b(co macie do zamowienia|jakie jedzenie macie|pokaz menu)\b/.test(query) ||
+    /\bco polecacie\b.*\bmenu\b/.test(query)
+  );
 }
 
 function formatCurrentMenu() {
