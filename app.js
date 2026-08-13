@@ -965,20 +965,10 @@ adminBtn.addEventListener("click", () => {
 /* ===== CART VISIBILITY CONTROL ===== */
 function showCartUI() {
   const panel = document.getElementById("bottom-cart-panel");
-  const arrow = document.getElementById("cart-arrow");
 
   if (panel) {
     panel.style.display = "block";
-    panel.classList.remove("open");
     panel.style.transform = "";
-
-    if (arrow) {
-      arrow.textContent = "⬆";
-    }
-
-    if (typeof renderBottomCart === "function") {
-      renderBottomCart();
-    }
 
     /* create summary button if not exists */
     if (!document.getElementById("summary-btn")) {
@@ -1419,22 +1409,6 @@ function clearChat() {
   messages.innerHTML = "";
 }
 
-function updateCartBar() {
-  const bar = document.getElementById("cart-bar");
-  const info = document.getElementById("cart-info");
-
-  if (orderCart.length === 0) {
-    bar.style.display = "none";
-    document.getElementById("chat-messages").style.marginTop = "0px";
-    return;
-  }
-
-  bar.style.display = "flex";
-  document.getElementById("chat-messages").style.marginTop = "30px";
-  info.textContent =
-    "🛒 Koszyk (" + orderCart.length + ") – " + getCartTotal() + " zł";
-}
-
 /* ===== PRICE UTILITY ===== */
 function extractPrice(text) {
   const m = text.match(/(\d+)\s*zł/);
@@ -1613,69 +1587,30 @@ function showSizeSelector(product) {
 }
 
 function addProductToCart(item, quantity) {
-  clearChat();
-
+  // Jedno miejsce mutacji przy dodawaniu produktu; updateCart odświeża widoczny panel.
   for (let i = 0; i < quantity; i++) {
     orderCart.push(item);
   }
 
-  const itemDisplay = parseOrderItemDisplay(item);
-  const unitPrice = extractPrice(item);
-  const subtotal = unitPrice * quantity;
+  updateCart({ open: true });
+  startOrder();
+  showCartToast();
+}
 
-  const card = document.createElement("div");
-  card.className = "cart-added-card";
+function showCartToast() {
+  const previousToast = document.querySelector(".cart-toast");
+  if (previousToast) previousToast.remove();
 
-  const title = document.createElement("div");
-  title.className = "cart-added-title";
-  title.textContent = "✅ Dodano do koszyka";
+  const toast = document.createElement("div");
+  toast.className = "cart-toast";
+  toast.setAttribute("role", "status");
+  toast.setAttribute("aria-live", "polite");
+  toast.textContent = "✅ Dodano do koszyka";
+  box.appendChild(toast);
 
-  const name = document.createElement("div");
-  name.className = "cart-added-name";
-  name.textContent = itemDisplay.name;
-
-  const meta = document.createElement("div");
-  meta.className = "cart-added-meta";
-
-  let metaText = "Ilość: " + quantity;
-
-  if (itemDisplay.size) {
-    metaText += " • rozmiar: " + itemDisplay.size;
-  }
-
-  meta.textContent = metaText;
-
-  const price = document.createElement("div");
-  price.className = "cart-added-price";
-  price.textContent = "Suma za produkt: " + subtotal + " zł";
-
-  const total = document.createElement("div");
-  total.className = "cart-added-total";
-  total.textContent = "Aktualna wartość koszyka: " + getCartTotal() + " zł";
-
-  const actions = document.createElement("div");
-  actions.className = "cart-added-actions";
-
-  const addMoreBtn = document.createElement("button");
-  addMoreBtn.type = "button";
-  addMoreBtn.className = "cart-added-btn primary";
-  addMoreBtn.textContent = "➕ Dodaj kolejny produkt";
-  addMoreBtn.onclick = startOrder;
-
-  actions.appendChild(addMoreBtn);
-
-  card.appendChild(title);
-  card.appendChild(name);
-  card.appendChild(meta);
-  card.appendChild(price);
-  card.appendChild(total);
-  card.appendChild(actions);
-
-  messages.appendChild(card);
-  scrollToBottom();
-
-  updateCart();
-  scrollToBottom();
+  requestAnimationFrame(() => toast.classList.add("visible"));
+  setTimeout(() => toast.classList.remove("visible"), 1400);
+  setTimeout(() => toast.remove(), 1750);
 }
 
 function showQuantitySelector(item) {
@@ -1847,52 +1782,8 @@ function handleOrder(text) {
       return;
     }
 
-    clearChat();
-
-    for (let i = 0; i < n; i++) {
-      orderCart.push(orderData.selectedItem);
-    }
-
-    addMsg(
-      "✅ Dodano do koszyka:\n\n" +
-        orderData.selectedItem +
-        " x" +
-        n +
-        "\n\n💰 Aktualna suma: " +
-        getCartTotal() +
-        " zł",
-      "bot",
-    );
-
-    const addMoreBtn = document.createElement("button");
-    addMoreBtn.textContent = "➕ Dodaj kolejny produkt";
-    addMoreBtn.style.marginTop = "6px";
-    addMoreBtn.style.padding = "6px 10px";
-    addMoreBtn.style.border = "none";
-    addMoreBtn.style.borderRadius = "10px";
-    addMoreBtn.style.cursor = "pointer";
-    addMoreBtn.onclick = startOrder;
-    messages.appendChild(addMoreBtn);
-
     orderStep = null;
-    updateCart();
-
-    const actions = document.createElement("div");
-    actions.className = "quick";
-
-    const more = document.createElement("button");
-    more.textContent = "➕ Dodaj coś jeszcze";
-    more.onclick = startOrder;
-
-    const cart = document.createElement("button");
-    cart.textContent = "🛒 Koszyk";
-    cart.onclick = showCart;
-
-    actions.appendChild(more);
-    actions.appendChild(cart);
-
-    messages.appendChild(actions);
-
+    addProductToCart(orderData.selectedItem, n);
     return;
   }
 
@@ -2085,27 +1976,30 @@ bottomCartBar.onclick = function () {
   if (!bottomCartPanel.classList.contains("open")) {
     bottomCartPanel.classList.add("open");
     cartArrow.textContent = "⬇";
-    renderBottomCart();
+    renderCart();
   } else {
     bottomCartPanel.classList.remove("open");
     cartArrow.textContent = "⬆";
   }
 };
 
-function updateCart() {
-  const panelWasOpen = bottomCartPanel.classList.contains("open");
+function updateCart(options = {}) {
+  // Jedyny wspólny update po każdej mutacji danych koszyka.
+  renderCart();
 
-  updateCartBar();
-  renderBottomCart();
-
-  if (orderFlowActive && orderCart.length > 0) {
-    bottomCartPanel.style.display = "block";
-    bottomCartPanel.style.transform = "";
-    bottomCartPanel.classList.toggle("open", panelWasOpen);
-    cartArrow.textContent = panelWasOpen ? "⬇" : "⬆";
-  } else if (!orderCart.length) {
+  if (!orderCart.length) {
     hideCartUI();
+    return;
   }
+
+  if (orderFlowActive) {
+    showCartUI();
+    if (options.open) bottomCartPanel.classList.add("open");
+  }
+
+  cartArrow.textContent = bottomCartPanel.classList.contains("open")
+    ? "⬇"
+    : "⬆";
 }
 
 function increaseCartItem(item) {
@@ -2128,7 +2022,8 @@ function removeFromCart(item) {
   updateCart();
 }
 
-function renderBottomCart() {
+// Jedyne źródło prawdy dla zawartości i sumy widocznego koszyka.
+function renderCart() {
   const counts = {};
 
   orderCart.forEach((i) => {

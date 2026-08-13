@@ -2402,6 +2402,32 @@ button,
 
 /* ===== POLISH: WYBÓR ILOŚCI + DODANO DO KOSZYKA ===== */
 
+.cart-toast {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 120;
+  padding: 13px 18px;
+  border-radius: 999px;
+  background: rgba(21, 128, 61, 0.96);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 900;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -45%) scale(0.96);
+  box-shadow: 0 12px 30px rgba(21, 128, 61, 0.3);
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease;
+}
+
+.cart-toast.visible {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
 .quantity-card,
 .quantity-more-card,
 .cart-added-card {
