@@ -109,7 +109,6 @@ toggle.onclick = () => {
   clearTimeout(hintTimeout);
 
   if (!box.classList.contains("open")) {
-    hideStickyActions();
     orderFlowActive = false;
     orderStep = null;
     messages.innerHTML = "";
@@ -122,13 +121,9 @@ toggle.onclick = () => {
     addQuick();
     document.getElementById("chat-input").style.display = "flex";
   }
-
-  updateStickyActionsVisibility();
-
 };
 
 closeBtn.onclick = () => {
-  hideStickyActions();
   box.classList.remove("open");
   orderFlowActive = false;
   orderStep = null;
@@ -152,7 +147,6 @@ function addMsg(text, cls) {
   d.className = "msg " + cls;
   d.textContent = text;
   messages.appendChild(d);
-  updateStickyActionsVisibility();
   scrollToBottom();
 }
 
@@ -175,59 +169,6 @@ function createQuickActions(actions) {
     box.appendChild(b);
   });
   return box;
-}
-
-function createStickyQuickActions() {
-  if (document.getElementById("chat-sticky-actions")) return;
-
-  const actionBar = document.createElement("div");
-  actionBar.id = "chat-sticky-actions";
-  actionBar.classList.add("is-hidden");
-  actionBar.setAttribute("aria-label", "Szybkie akcje");
-
-  [
-    { text: "🛒 Zamów", onClick: startOrder },
-    { text: "📖 Menu", onClick: showMenu },
-    { text: "📅 Rezerwuj", onClick: startReservation },
-  ].forEach((action) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.textContent = action.text;
-    button.onclick = action.onClick;
-    actionBar.appendChild(button);
-  });
-
-  document.getElementById("chat-input").before(actionBar);
-}
-
-createStickyQuickActions();
-
-function hideStickyActions() {
-  const actionBar = document.getElementById("chat-sticky-actions");
-  if (actionBar) actionBar.classList.add("is-hidden");
-}
-
-function showStickyActions() {
-  const actionBar = document.getElementById("chat-sticky-actions");
-  if (actionBar) actionBar.classList.remove("is-hidden");
-}
-
-function updateStickyActionsVisibility() {
-  const normalConversationIsLongEnough =
-    messages.querySelectorAll(".msg.user").length >= 2;
-  const isNormalConversation =
-    box.classList.contains("open") &&
-    normalConversationIsLongEnough &&
-    orderFlowActive !== true &&
-    !orderStep &&
-    !reservationStep &&
-    !cancelStep;
-
-  if (isNormalConversation) {
-    showStickyActions();
-  } else {
-    hideStickyActions();
-  }
 }
 
 function enableCategoryBarScroll(bar) {
@@ -279,7 +220,6 @@ function addQuick() {
     q.appendChild(b);
   });
   messages.appendChild(q);
-  updateStickyActionsVisibility();
   scrollToBottom();
 }
 
@@ -399,8 +339,16 @@ function isValidSurname(t) {
 function showMenu() {
   resetReservation();
   cancelStep = null;
-  addMsg(formatCurrentMenu(), "bot");
-  showMenuImages();
+
+  if (menuImages.length) {
+    showMenuImages();
+    return;
+  }
+
+  addMsg(
+    "Aktualnie nie dodano zdjęcia menu. Mogę sprawdzić konkretne danie albo pomóc z zamówieniem.",
+    "bot",
+  );
 }
 
 function startReservation() {
@@ -411,7 +359,6 @@ function startReservation() {
   orderStep = null;
   orderCategory = null;
   reservationStep = "date";
-  hideStickyActions();
   addMsg("📅 Na jaki dzień chcesz zarezerwować stolik?", "bot");
 }
 
@@ -421,7 +368,6 @@ function startCancel() {
   orderCategory = null;
   cancelData = {};
   cancelStep = "lastname";
-  hideStickyActions();
   addMsg("Aby anulować rezerwację, podaj nazwisko:", "bot");
 }
 
@@ -611,8 +557,7 @@ function sendMsg() {
   const intent = detectIntent(lower);
 
   if (intent === "daily") {
-    addMsg("🥪 Kanapka tygodnia:\n\n" + pobierzKanapkeTygodnia(), "bot");
-    showSandwichImages();
+    showSandwich();
     return;
   }
   if (intent === "menu") {
@@ -836,26 +781,37 @@ window.addEventListener("DOMContentLoaded", function () {
   }
 });
 
-function showSandwichImages() {
-  if (!sandwichImages.length) return;
+function showSandwich() {
+  const card = document.createElement("div");
+  card.className = "msg bot sandwich-card";
 
-  const container = document.createElement("div");
-  container.className = "menu-images";
+  const text = document.createElement("div");
+  text.className = "sandwich-card-text";
 
-  sandwichImages.forEach((src) => {
-    const im = document.createElement("img");
-    im.src = src;
-    im.onclick = () => openMenuModal(src);
-    container.appendChild(im);
-  });
+  const title = document.createElement("strong");
+  title.textContent = "🥪 Kanapka tygodnia";
 
-  messages.appendChild(container);
-  messages.scrollTop = messages.scrollHeight;
+  const details = document.createElement("div");
+  details.className = "sandwich-card-details";
+  details.textContent = pobierzKanapkeTygodnia();
+  text.append(title, details);
+  card.appendChild(text);
+
+  if (sandwichImages.length) {
+    const image = document.createElement("img");
+    image.className = "sandwich-card-image";
+    image.src = sandwichImages[0];
+    image.alt = "Kanapka tygodnia";
+    image.onclick = () => openMenuModal(image.src);
+    card.appendChild(image);
+  }
+
+  messages.appendChild(card);
+  scrollToBottom();
 }
 
 /* ===== SHOW MENU IMAGES IN CHAT ===== */
 function showMenuImages() {
-  // Brak zdjęć nie oznacza braku menu tekstowego.
   if (!menuImages.length) return;
 
   const container = document.createElement("div");
@@ -1410,7 +1366,7 @@ function showCartUI() {
             /* RESET */
             orderCart = [];
             orderData = {};
-            updateCartBar();
+            updateCart();
           };
 
           form.appendChild(title);
@@ -1501,7 +1457,6 @@ function startOrder() {
   resetReservation();
   cancelStep = null;
   orderFlowActive = true;
-  hideStickyActions();
   document.getElementById("chat-input").style.display = "none";
 
   messages.innerHTML = "";
@@ -1597,6 +1552,66 @@ function parseOrderItemDisplay(item) {
   };
 }
 
+function groupOrderItems(items) {
+  const grouped = new Map();
+
+  items.forEach((item) => {
+    const display = parseOrderItemDisplay(item);
+    const key = display.name.toLocaleLowerCase("pl");
+
+    if (!grouped.has(key)) {
+      grouped.set(key, { name: display.name, variants: [], item: null });
+    }
+
+    const product = grouped.get(key);
+    if (display.size) {
+      product.variants.push({ item, ...display });
+    } else if (!product.item) {
+      product.item = item;
+    }
+  });
+
+  return Array.from(grouped.values());
+}
+
+function showSizeSelector(product) {
+  clearChat();
+
+  const card = document.createElement("div");
+  card.className = "quantity-card size-card";
+
+  const title = document.createElement("div");
+  title.className = "quantity-title";
+  title.textContent = "Wybierz rozmiar";
+
+  const name = document.createElement("div");
+  name.className = "quantity-product";
+  name.textContent = product.name;
+
+  const options = document.createElement("div");
+  options.className = "size-options";
+
+  product.variants.forEach((variant) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "size-option";
+    button.textContent =
+      (variant.size === "mały" ? "Mała" : "Duża") + " — " + variant.price;
+    button.onclick = () => showQuantitySelector(variant.item);
+    options.appendChild(button);
+  });
+
+  const back = document.createElement("button");
+  back.type = "button";
+  back.className = "quantity-more-back";
+  back.textContent = "⬅ Wróć";
+  back.onclick = startOrder;
+
+  card.append(title, name, options, back);
+  messages.appendChild(card);
+  scrollToBottom();
+}
+
 function addProductToCart(item, quantity) {
   clearChat();
 
@@ -1659,14 +1674,11 @@ function addProductToCart(item, quantity) {
   messages.appendChild(card);
   scrollToBottom();
 
-  updateCartBar();
-  if (orderFlowActive && orderCart.length > 0) showCartUI();
-  renderBottomCart();
+  updateCart();
   scrollToBottom();
 }
 
 function showQuantitySelector(item) {
-  hideStickyActions();
   clearChat();
 
   const itemDisplay = parseOrderItemDisplay(item);
@@ -1680,7 +1692,8 @@ function showQuantitySelector(item) {
 
   const product = document.createElement("div");
   product.className = "quantity-product";
-  product.textContent = itemDisplay.name;
+  product.textContent =
+    itemDisplay.name + (itemDisplay.size ? " (" + itemDisplay.size + ")" : "");
 
   const qty = document.createElement("div");
   qty.className = "quantity-options";
@@ -1722,7 +1735,6 @@ function showQuantitySelector(item) {
 }
 
 function showMoreQuantitySelector(item) {
-  hideStickyActions();
   clearChat();
 
   const itemDisplay = parseOrderItemDisplay(item);
@@ -1736,7 +1748,8 @@ function showMoreQuantitySelector(item) {
 
   const product = document.createElement("div");
   product.className = "quantity-more-product";
-  product.textContent = itemDisplay.name;
+  product.textContent =
+    itemDisplay.name + (itemDisplay.size ? " (" + itemDisplay.size + ")" : "");
 
   const select = document.createElement("select");
   select.className = "quantity-more-select";
@@ -1776,7 +1789,6 @@ function showMoreQuantitySelector(item) {
 }
 
 function showOrderItems() {
-  hideStickyActions();
   orderStep = "items";
 
   /* remove previous category items so new category replaces them */
@@ -1786,40 +1798,39 @@ function showOrderItems() {
   const oldMsg = document.querySelector(".order-items-msg");
   if (oldMsg) oldMsg.remove();
 
-  const items = ORDER_CATEGORIES[orderCategory] || [];
-
+  const products = groupOrderItems(ORDER_CATEGORIES[orderCategory] || []);
   const container = document.createElement("div");
   container.className = "product-grid order-items";
 
-  items.forEach((item) => {
-    const itemDisplay = parseOrderItemDisplay(item);
-
+  products.forEach((product) => {
     const card = document.createElement("div");
     card.className = "product-card";
 
-    const n = document.createElement("div");
-    n.className = "product-name";
-    n.textContent = itemDisplay.name;
+    const name = document.createElement("div");
+    name.className = "product-name";
+    name.textContent = product.name;
+    card.appendChild(name);
 
-    card.appendChild(n);
+    const price = document.createElement("div");
+    price.className = "product-price";
 
-    if (itemDisplay.size) {
-      const s = document.createElement("div");
-      s.className = "product-size";
-      s.textContent = "rozmiar: " + itemDisplay.size;
-      card.appendChild(s);
+    if (product.variants.length) {
+      const small = product.variants.find((variant) => variant.size === "mały");
+      const large = product.variants.find((variant) => variant.size === "duży");
+      price.textContent = [
+        small && "mały " + small.price,
+        large && "duży " + large.price,
+      ]
+        .filter(Boolean)
+        .join(" / ");
+      card.onclick = () => showSizeSelector(product);
+    } else {
+      const display = parseOrderItemDisplay(product.item);
+      price.textContent = display.price;
+      card.onclick = () => showQuantitySelector(product.item);
     }
 
-    const p = document.createElement("div");
-    p.className = "product-price";
-    p.textContent = itemDisplay.price;
-
-    card.appendChild(p);
-
-    card.onclick = function () {
-      showQuantitySelector(item);
-    };
-
+    card.appendChild(price);
     container.appendChild(card);
   });
 
@@ -1864,7 +1875,7 @@ function handleOrder(text) {
     messages.appendChild(addMoreBtn);
 
     orderStep = null;
-    updateCartBar();
+    updateCart();
 
     const actions = document.createElement("div");
     actions.className = "quick";
@@ -1939,7 +1950,7 @@ function handleOrder(text) {
 
     orderCart = [];
     orderData = {};
-    updateCartBar();
+    updateCart();
   }
 }
 
@@ -1998,7 +2009,6 @@ function showOrderSuccessScreen(msg) {
 }
 
 function showCart() {
-  hideStickyActions();
   clearChat();
 
   if (!orderCart.length) {
@@ -2081,6 +2091,42 @@ bottomCartBar.onclick = function () {
     cartArrow.textContent = "⬆";
   }
 };
+
+function updateCart() {
+  const panelWasOpen = bottomCartPanel.classList.contains("open");
+
+  updateCartBar();
+  renderBottomCart();
+
+  if (orderFlowActive && orderCart.length > 0) {
+    bottomCartPanel.style.display = "block";
+    bottomCartPanel.style.transform = "";
+    bottomCartPanel.classList.toggle("open", panelWasOpen);
+    cartArrow.textContent = panelWasOpen ? "⬇" : "⬆";
+  } else if (!orderCart.length) {
+    hideCartUI();
+  }
+}
+
+function increaseCartItem(item) {
+  orderCart.push(item);
+  updateCart();
+}
+
+function decreaseCartItem(item) {
+  const index = orderCart.indexOf(item);
+
+  if (index > -1) {
+    orderCart.splice(index, 1);
+  }
+
+  updateCart();
+}
+
+function removeFromCart(item) {
+  orderCart = orderCart.filter((cartItem) => cartItem !== item);
+  updateCart();
+}
 
 function renderBottomCart() {
   const counts = {};
@@ -2170,25 +2216,9 @@ function renderBottomCart() {
     remove.className = "bottom-cart-remove-btn";
     remove.textContent = "×";
 
-    minus.onclick = function () {
-      const index = orderCart.indexOf(name);
-
-      if (index > -1) {
-        orderCart.splice(index, 1);
-      }
-
-      updateCartBar();
-    };
-
-    plus.onclick = function () {
-      orderCart.push(name);
-      updateCartBar();
-    };
-
-    remove.onclick = function () {
-      orderCart = orderCart.filter((i) => i !== name);
-      updateCartBar();
-    };
+    minus.onclick = () => decreaseCartItem(name);
+    plus.onclick = () => increaseCartItem(name);
+    remove.onclick = () => removeFromCart(name);
 
     controls.appendChild(minus);
     controls.appendChild(qty);
@@ -2237,18 +2267,6 @@ startOrder = function () {
   originalStartOrder();
   if (orderCart.length > 0) showCartUI();
   scrollToBottom();
-};
-
-/* update cart panel when items added */
-const originalUpdateCartBar = updateCartBar;
-updateCartBar = function () {
-  originalUpdateCartBar();
-  renderBottomCart();
-  if (orderFlowActive && orderCart.length > 0) {
-    showCartUI();
-  } else if (!orderCart.length) {
-    hideCartUI();
-  }
 };
 
 /* detect order intent */
@@ -2881,6 +2899,7 @@ function isMenuBrowsingIntent(text) {
   const query = normalizeChatText(text);
 
   return (
+    /^(menu|karta)$/i.test(query) ||
     /\bco (moge|mozna) (u was )?(zamowic|zjesc|dostac)\b/.test(query) ||
     /\bco u was (dostane|zjem)\b/.test(query) ||
     /\bco macie\b/.test(query) ||
@@ -3034,7 +3053,7 @@ function answerFromRestaurantData(text) {
   // Pytanie o ofertę ma pierwszeństwo przed wyszukiwaniem nazwy produktu.
   // Dzięki temu słowa z całego zdania nie są traktowane jak nazwa dania.
   if (isMenuBrowsingIntent(text)) {
-    return formatCurrentMenu();
+    return null;
   }
 
   if (isMenuQuestion(text)) {
@@ -3065,7 +3084,7 @@ function answerFromRestaurantData(text) {
     }
 
     if (/\b(menu|karta|jedzenie)\b|\b(co|jakie) macie\b/.test(query)) {
-      return formatCurrentMenu();
+      return "Aktualnie nie dodano zdjęcia menu. Mogę sprawdzić konkretne danie albo pomóc z zamówieniem.";
     }
 
     return "Nie znalazłem tego w aktualnym menu restauracji. Mogę pokazać całe menu albo pomóc z rezerwacją.";
