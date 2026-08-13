@@ -208,14 +208,8 @@ function addQuick() {
       b.classList.add("quick-order-main");
     }
     b.onclick = () => {
-      if (t === "📖 Menu") {
-        showMenu();
-      } else if (t.includes("Zamów")) {
-        startOrder();
-      } else {
-        input.value = t;
-        sendMsg();
-      }
+      input.value = t;
+      sendMsg();
     };
     q.appendChild(b);
   });
@@ -262,10 +256,11 @@ function isSandwichCommand(text) {
 }
 
 function detectIntent(t) {
+  if (isRecommendationIntent(t)) return "recommendation";
   if (isMenuBrowsingIntent(t)) return "menu";
   if (isSandwichCommand(t)) return "daily";
   if (
-    /kanapka tygodnia|specjal|promocja dnia|polecacie|co polecacie|co polecasz|co dzis polecacie/i.test(
+    /kanapka tygodnia|specjal|promocja dnia/i.test(
       t,
     )
   )
@@ -562,6 +557,10 @@ function sendMsg() {
   }
   if (intent === "menu") {
     showMenu();
+    return;
+  }
+  if (intent === "recommendation") {
+    showMenuRecommendations(text);
     return;
   }
   if (intent === "hours") {
@@ -1311,17 +1310,12 @@ function showCartUI() {
             /* ===== MESSAGE ===== */
 
             let msg = "✅ Zamówienie przyjęte\n\n";
-            msg += "📦 Numer zamówienia: #" + orderNumber + "\n\n";
-
-            orderCart.forEach((i) => {
-              msg += "• " + i + "\n";
-            });
-
-            msg += "\n💰 Razem: " + getCartTotal() + " zł";
-            msg += "\n\n📍 " + orderData.address;
-            msg += "\n📞 " + orderData.phone;
-            msg += "\n\n🔔 Status: do potwierdzenia";
-            msg += "\n⏳ Czas realizacji: około 30 minut";
+            msg += "📦 Numer: #" + orderNumber + "\n";
+            msg += "💰 Razem: " + getCartTotal() + " zł\n";
+            msg += "⏳ Szacowany czas: ok. 30 minut\n\n";
+            msg += "🔔 Status: do potwierdzenia\n";
+            msg +=
+              "📩 Gdy restauracja potwierdzi i zacznie przygotowywać zamówienie, otrzymasz SMS.";
 
             showOrderSuccessScreen(msg);
 
@@ -1802,16 +1796,12 @@ function handleOrder(text) {
     let orderNumber = Math.floor(1000 + Math.random() * 9000);
 
     let msg = "✅ Zamówienie przyjęte\n\n";
-    msg += "📦 Numer zamówienia: #" + orderNumber + "\n\n";
-
-    orderCart.forEach((i) => {
-      msg += "• " + i + "\n";
-    });
-
-    msg += "\n💰 Razem: " + getCartTotal() + " zł";
-    msg += "\n\n📍 " + orderData.address;
-    msg += "\n📞 " + orderData.phone;
-    msg += "\n⏳ Czas realizacji: około 30 minut";
+    msg += "📦 Numer: #" + orderNumber + "\n";
+    msg += "💰 Razem: " + getCartTotal() + " zł\n";
+    msg += "⏳ Szacowany czas: ok. 30 minut\n\n";
+    msg += "🔔 Status: do potwierdzenia\n";
+    msg +=
+      "📩 Gdy restauracja potwierdzi i zacznie przygotowywać zamówienie, otrzymasz SMS.";
 
     addMsg(msg, "bot");
 
@@ -2802,8 +2792,65 @@ function isMenuBrowsingIntent(text) {
     /\bjaka jest oferta\b/.test(query) ||
     /\bjakie macie (dania|jedzenie)\b/.test(query) ||
     /\bjakie\b.*\bmacie\b/.test(query) ||
-    /\bpokaz\b.*\b(menu|karte)\b/.test(query) ||
-    /\bco polecacie( z menu)?\b/.test(query)
+    /\bpokaz\b.*\b(menu|karte)\b/.test(query)
+  );
+}
+
+function isRecommendationIntent(text) {
+  const query = normalizeChatText(text);
+
+  return (
+    /\bco polecacie\b/.test(query) ||
+    /\bco polecasz\b/.test(query) ||
+    /\bco warto zamowic\b/.test(query) ||
+    /\bco jest dobre\b/.test(query) ||
+    /\bco najlepiej wybrac\b/.test(query) ||
+    /\bpolec cos\b/.test(query) ||
+    /\bco bys polecil\b/.test(query) ||
+    /\bco najczesciej wybieraja klienci\b/.test(query)
+  );
+}
+
+function getMenuRecommendations() {
+  const items = getMenuItemsForSearch();
+  const recommendations = [];
+  const selectedCategories = new Set();
+
+  items.forEach((item) => {
+    if (recommendations.length >= 4 || selectedCategories.has(item.category)) {
+      return;
+    }
+
+    recommendations.push(item);
+    selectedCategories.add(item.category);
+  });
+
+  items.forEach((item) => {
+    if (recommendations.length >= Math.min(4, items.length)) return;
+    if (!recommendations.includes(item)) recommendations.push(item);
+  });
+
+  return recommendations.slice(0, 4);
+}
+
+function showMenuRecommendations(text) {
+  const recommendations = getMenuRecommendations();
+
+  if (!recommendations.length) {
+    addMsg("Aktualnie nie ma danych menu, na podstawie których mogę coś polecić.", "bot");
+    return;
+  }
+
+  const popularityNote = /najczesciej|popular/.test(normalizeChatText(text))
+    ? "Nie mam danych o popularności, ale mogę polecić pozycje z aktualnego menu:\n"
+    : "Mogę polecić kilka pozycji z aktualnego menu:\n";
+  const products = recommendations
+    .map((item) => `• ${item.name}${item.priceText ? ` — ${item.priceText}` : ""}`)
+    .join("\n");
+
+  addMsg(
+    `${popularityNote}${products}\n\nChcesz, żebym od razu pomógł złożyć zamówienie?`,
+    "bot",
   );
 }
 
@@ -2857,7 +2904,7 @@ function getMenuItemsForSearch() {
           " zł / duży " +
           product.sizes.large +
           " zł";
-      } else {
+      } else if (product.price !== undefined && product.price !== null) {
         priceText = product.price + " zł";
       }
 
