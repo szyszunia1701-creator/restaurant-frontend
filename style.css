@@ -784,37 +784,6 @@ button,
   background: #fff;
 }
 
-#chat-sticky-actions {
-  display: flex;
-  flex-shrink: 0;
-  gap: 6px;
-  padding: 7px 10px;
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
-  background: rgba(255, 255, 255, 0.96);
-  z-index: 20;
-}
-
-#chat-sticky-actions.is-hidden {
-  display: none;
-}
-
-#chat-sticky-actions button {
-  flex: 1 1 0;
-  min-width: 0;
-  padding: 7px 5px;
-  border: 1px solid rgba(139, 0, 0, 0.18);
-  border-radius: 999px;
-  background: #fff;
-  color: var(--brand-red-dark);
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-#chat-sticky-actions button:hover {
-  background: var(--cream);
-}
-
 #chat-input input {
   flex: 1;
   border: none;
@@ -1015,6 +984,48 @@ button,
 .menu-images img:hover {
   transform: scale(1.05);
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.16);
+}
+
+.sandwich-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  width: min(100%, 360px);
+  max-width: 100%;
+  white-space: normal;
+}
+
+.sandwich-card-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.sandwich-card-details {
+  margin-top: 7px;
+  white-space: pre-line;
+}
+
+.sandwich-card-image {
+  flex: 0 0 108px;
+  width: 108px;
+  height: 108px;
+  object-fit: cover;
+  border-radius: 14px;
+  cursor: pointer;
+  box-shadow: 0 7px 18px rgba(0, 0, 0, 0.16);
+}
+
+@media (max-width: 360px) {
+  .sandwich-card {
+    flex-wrap: wrap;
+  }
+
+  .sandwich-card-image {
+    width: 100%;
+    height: 140px;
+    flex-basis: 100%;
+  }
 }
 
 /* ===== IMAGE MODAL ===== */
@@ -1359,17 +1370,6 @@ button,
     flex-shrink: 0;
     min-height: 58px;
     padding-bottom: env(safe-area-inset-bottom);
-  }
-
-  #chat-sticky-actions {
-    padding: 6px 8px;
-    padding-left: max(8px, env(safe-area-inset-left));
-    padding-right: max(8px, env(safe-area-inset-right));
-  }
-
-  #chat-sticky-actions button {
-    min-height: 38px;
-    font-size: 11px;
   }
 
   #chat-input input {
@@ -2450,6 +2450,29 @@ button,
   grid-template-columns: repeat(5, 1fr);
   gap: 8px;
   margin-top: 14px;
+}
+
+.size-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.size-option {
+  min-height: 48px;
+  padding: 10px;
+  border: 1px solid rgba(139, 0, 0, 0.14);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--brand-dark);
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.size-option:hover {
+  background: linear-gradient(135deg, #6faa7b, #3f7f5a);
+  color: #fff;
 }
 
 .quantity-option {
