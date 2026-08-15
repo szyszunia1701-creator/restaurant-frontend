@@ -1502,6 +1502,15 @@ function startOrder() {
 }
 
 function parseOrderItemDisplay(item) {
+  if (item && typeof item === "object") {
+    return {
+      name: item.name || "",
+      size: item.size || "",
+      price: item.price || "",
+      ingredients: item.ingredients || "",
+    };
+  }
+
   const parts = item.split(" – ");
   let rawName = parts[0] || item;
   const price = parts[1] || "";
@@ -1517,6 +1526,7 @@ function parseOrderItemDisplay(item) {
     name: rawName,
     size,
     price,
+    ingredients: "",
   };
 }
 
@@ -1524,11 +1534,47 @@ function groupOrderItems(items) {
   const grouped = new Map();
 
   items.forEach((item) => {
+    if (item && typeof item === "object" && !item.size) {
+      const variants = [];
+
+      if (item.sizes) {
+        variants.push(
+          {
+            item: item.name + " (mały) – " + item.sizes.small + " zł",
+            name: item.name,
+            size: "mały",
+            price: item.sizes.small + " zł",
+            ingredients: item.ingredients || "",
+          },
+          {
+            item: item.name + " (duży) – " + item.sizes.large + " zł",
+            name: item.name,
+            size: "duży",
+            price: item.sizes.large + " zł",
+            ingredients: item.ingredients || "",
+          },
+        );
+      }
+
+      grouped.set(item.name.toLocaleLowerCase("pl"), {
+        name: item.name,
+        ingredients: item.ingredients || "",
+        variants,
+        item: item.sizes ? null : item.name + " – " + item.price + " zł",
+      });
+      return;
+    }
+
     const display = parseOrderItemDisplay(item);
     const key = display.name.toLocaleLowerCase("pl");
 
     if (!grouped.has(key)) {
-      grouped.set(key, { name: display.name, variants: [], item: null });
+      grouped.set(key, {
+        name: display.name,
+        ingredients: display.ingredients || "",
+        variants: [],
+        item: null,
+      });
     }
 
     const product = grouped.get(key);
@@ -1739,6 +1785,13 @@ function showOrderItems() {
     name.className = "product-name";
     name.textContent = product.name;
     card.appendChild(name);
+
+    if (product.ingredients) {
+      const ingredients = document.createElement("div");
+      ingredients.className = "product-ingredients";
+      ingredients.textContent = product.ingredients;
+      card.appendChild(ingredients);
+    }
 
     const price = document.createElement("div");
     price.className = "product-price";
@@ -2276,17 +2329,32 @@ window.addEventListener("DOMContentLoaded", function () {
   panel.appendChild(container);
 });
 
+function normalizeMenuIngredients(data) {
+  const menu = data && typeof data === "object" ? data : {};
+
+  Object.keys(menu).forEach((category) => {
+    if (!Array.isArray(menu[category])) return;
+    menu[category] = menu[category].map((product) => ({
+      ...product,
+      ingredients: product.ingredients || "",
+    }));
+  });
+
+  return menu;
+}
+
 function getAdminMenu() {
   const data = localStorage.getItem("adminMenuData");
   if (!data) return {};
   try {
-    return JSON.parse(data);
+    return normalizeMenuIngredients(JSON.parse(data));
   } catch (e) {
     return {};
   }
 }
 
 function saveAdminMenu(data) {
+  data = normalizeMenuIngredients(data);
   localStorage.setItem("adminMenuData", JSON.stringify(data));
 
   /* główny zapis - Google Sheets */
@@ -2305,7 +2373,7 @@ async function loadMenuFromBackend() {
 
     if (!res.ok) return;
 
-    const data = await res.json();
+    const data = normalizeMenuIngredients(await res.json());
 
     localStorage.setItem("adminMenuData", JSON.stringify(data));
 
@@ -2336,16 +2404,10 @@ function syncMenuWithOrderSystem() {
   Object.keys(data).forEach((cat) => {
     ORDER_CATEGORIES[cat] = [];
     data[cat].forEach((p) => {
-      if (p.sizes) {
-        ORDER_CATEGORIES[cat].push(
-          p.name + " (mały) – " + p.sizes.small + " zł",
-        );
-        ORDER_CATEGORIES[cat].push(
-          p.name + " (duży) – " + p.sizes.large + " zł",
-        );
-      } else {
-        ORDER_CATEGORIES[cat].push(p.name + " – " + p.price + " zł");
-      }
+      ORDER_CATEGORIES[cat].push({
+        ...p,
+        ingredients: p.ingredients || "",
+      });
     });
   });
 }
@@ -2611,6 +2673,95 @@ function renderAdminTable() {
 
   const products = data[selectedCategory];
 
+  function showProductEditor(container, product, productIndex) {
+    const wrap = document.createElement("div");
+    wrap.className = "admin-product-editor";
+
+    const name = document.createElement("input");
+    name.placeholder = "Nazwa produktu";
+    name.value = product.name || "";
+
+    const ingredients = document.createElement("textarea");
+    ingredients.placeholder =
+      "np. sos pomidorowy, mozzarella, szynka, pieczarki";
+    ingredients.setAttribute("aria-label", "Składniki / opis");
+    ingredients.rows = 2;
+    ingredients.value = product.ingredients || "";
+
+    const ingredientsLabel = document.createElement("label");
+    ingredientsLabel.textContent = "Składniki / opis";
+    ingredientsLabel.appendChild(ingredients);
+
+    const priceRow = document.createElement("div");
+    priceRow.className = "admin-product-price-row";
+
+    const sizeToggle = document.createElement("input");
+    sizeToggle.type = "checkbox";
+    sizeToggle.title = "produkt ma rozmiary";
+    sizeToggle.checked = Boolean(product.sizes);
+
+    const label = document.createElement("span");
+    label.textContent = "rozmiary";
+
+    const price = document.createElement("input");
+    price.placeholder = "cena";
+    price.value = product.price || "";
+
+    const small = document.createElement("input");
+    small.placeholder = "mały";
+    small.value = product.sizes ? product.sizes.small : "";
+
+    const large = document.createElement("input");
+    large.placeholder = "duży";
+    large.value = product.sizes ? product.sizes.large : "";
+
+    function updatePriceFields() {
+      price.style.display = sizeToggle.checked ? "none" : "block";
+      small.style.display = sizeToggle.checked ? "block" : "none";
+      large.style.display = sizeToggle.checked ? "block" : "none";
+    }
+
+    sizeToggle.onchange = updatePriceFields;
+    updatePriceFields();
+
+    const save = document.createElement("button");
+    save.textContent = "OK";
+    save.onclick = function () {
+      const productName = name.value.trim();
+      if (!productName) return;
+
+      const updatedProduct = {
+        name: productName,
+        ingredients: ingredients.value.trim(),
+      };
+
+      if (sizeToggle.checked) {
+        const smallPrice = small.value.trim();
+        const largePrice = large.value.trim();
+        if (!smallPrice || !largePrice) return;
+        updatedProduct.sizes = { small: smallPrice, large: largePrice };
+      } else {
+        const productPrice = price.value.trim();
+        if (!productPrice) return;
+        updatedProduct.price = productPrice;
+      }
+
+      const currentData = getAdminMenu();
+      if (productIndex === null) {
+        currentData[selectedCategory].push(updatedProduct);
+      } else {
+        currentData[selectedCategory][productIndex] = updatedProduct;
+      }
+      saveAdminMenu(currentData);
+      renderAdminTable();
+      syncMenuWithOrderSystem();
+    };
+
+    priceRow.append(sizeToggle, label, price, small, large, save);
+    wrap.append(name, ingredientsLabel, priceRow);
+    container.appendChild(wrap);
+  }
+
   /* product rows */
   products.forEach((p, i) => {
     const row = document.createElement("div");
@@ -2644,7 +2795,17 @@ function renderAdminTable() {
       syncMenuWithOrderSystem();
     };
 
+    const edit = document.createElement("button");
+    edit.textContent = "Edytuj";
+    edit.style.marginLeft = "auto";
+    edit.style.marginRight = "4px";
+    edit.onclick = function () {
+      row.innerHTML = "";
+      showProductEditor(row, p, i);
+    };
+
     row.appendChild(name);
+    row.appendChild(edit);
     row.appendChild(del);
     prodCol.appendChild(row);
   });
@@ -2659,93 +2820,7 @@ function renderAdminTable() {
 
   plus.onclick = function () {
     plus.remove();
-
-    const wrap = document.createElement("div");
-    wrap.style.display = "flex";
-    wrap.style.gap = "4px";
-    wrap.style.marginTop = "6px";
-
-    const name = document.createElement("input");
-    name.placeholder = "nazwa";
-    name.style.width = "200px";
-    name.style.flex = "0 0 200px";
-
-    const sizeToggle = document.createElement("input");
-    sizeToggle.type = "checkbox";
-    sizeToggle.title = "produkt ma rozmiary";
-
-    const label = document.createElement("span");
-    label.textContent = "rozmiary";
-
-    const price = document.createElement("input");
-    price.placeholder = "cena";
-    price.style.width = "80px";
-    price.style.flex = "0 0 80px";
-
-    const small = document.createElement("input");
-    small.placeholder = "mały";
-    small.style.width = "70px";
-    small.style.display = "none";
-
-    const large = document.createElement("input");
-    large.placeholder = "duży";
-    large.style.width = "70px";
-    large.style.display = "none";
-
-    sizeToggle.onchange = function () {
-      if (sizeToggle.checked) {
-        price.style.display = "none";
-        small.style.display = "block";
-        large.style.display = "block";
-      } else {
-        price.style.display = "block";
-        small.style.display = "none";
-        large.style.display = "none";
-      }
-    };
-
-    const save = document.createElement("button");
-    save.textContent = "OK";
-    save.style.width = "50px";
-    save.style.flex = "0 0 50px";
-    save.style.padding = "6px 8px";
-
-    save.onclick = function () {
-      const n = name.value.trim();
-      if (!n) return;
-
-      const d = getAdminMenu();
-
-      if (sizeToggle.checked) {
-        const s = small.value.trim();
-        const l = large.value.trim();
-        if (!s || !l) return;
-
-        d[selectedCategory].push({
-          name: n,
-          sizes: { small: s, large: l },
-        });
-      } else {
-        const pr = price.value.trim();
-        if (!pr) return;
-
-        d[selectedCategory].push({ name: n, price: pr });
-      }
-
-      saveAdminMenu(d);
-      renderAdminTable();
-      syncMenuWithOrderSystem();
-    };
-
-    wrap.appendChild(name);
-    wrap.appendChild(sizeToggle);
-    wrap.appendChild(label);
-    wrap.appendChild(price);
-    wrap.appendChild(small);
-    wrap.appendChild(large);
-    wrap.appendChild(save);
-
-    prodCol.appendChild(wrap);
+    showProductEditor(prodCol, {}, null);
   };
 
   prodCol.appendChild(plus);
@@ -2911,6 +2986,7 @@ function getMenuItemsForSearch() {
       items.push({
         category,
         name: product.name,
+        ingredients: product.ingredients || "",
         priceText,
         searchText: normalizeChatText(category + " " + product.name),
       });
@@ -2960,8 +3036,20 @@ function findMenuMatches(text) {
 
       words.forEach((word) => {
         const stem = word.length > 4 ? word.slice(0, -1) : word;
+        const searchWords = item.searchText.split(" ");
+        const inflectedNameMatch =
+          word.length >= 5 &&
+          searchWords.some(
+            (searchWord) =>
+              searchWord.length >= 5 &&
+              searchWord.slice(0, 5) === word.slice(0, 5),
+          );
 
-        if (item.searchText.includes(word) || item.searchText.includes(stem)) {
+        if (
+          item.searchText.includes(word) ||
+          item.searchText.includes(stem) ||
+          inflectedNameMatch
+        ) {
           score++;
         }
       });
@@ -2990,6 +3078,29 @@ function answerFromRestaurantData(text) {
 
   if (/rezerw|stolik|booking/.test(query)) {
     return "📅 Mogę pomóc w rezerwacji stolika. Kliknij „📅 Rezerwacja” albo napisz, na jaki dzień chcesz zarezerwować stolik.";
+  }
+
+  const ingredientsIntent =
+    /\b(skladnik|sklad|zawiera)\w*\b/.test(query) ||
+    /\bco jest (na|w)\b/.test(query) ||
+    /\bz czym jest\b/.test(query);
+
+  if (ingredientsIntent) {
+    const matches = findMenuMatches(text);
+    const bestMatches = matches.length
+      ? matches.filter((item) => item.score === matches[0].score)
+      : [];
+
+    if (bestMatches.length !== 1) {
+      return "Nie znalazłem tego produktu w aktualnym menu restauracji.";
+    }
+
+    const product = bestMatches[0];
+    if (!product.ingredients) {
+      return "Nie mam jeszcze zapisanych składników tego produktu.";
+    }
+
+    return product.name + ": " + product.ingredients + ".";
   }
 
   // Pytanie o ofertę ma pierwszeństwo przed wyszukiwaniem nazwy produktu.
