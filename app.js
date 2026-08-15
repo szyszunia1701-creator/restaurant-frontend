@@ -197,6 +197,18 @@ function enableCategoryBarScroll(bar) {
   );
 }
 
+function revealCategoryButton(bar, button, behavior = "smooth") {
+  if (!bar || !button) return;
+
+  const targetLeft =
+    button.offsetLeft - (bar.clientWidth - button.offsetWidth) / 2;
+
+  bar.scrollTo({
+    left: Math.max(0, targetLeft),
+    behavior,
+  });
+}
+
 function addQuick() {
   const q = document.createElement("div");
   q.className = "quick";
@@ -1549,6 +1561,8 @@ async function startOrder() {
       btns.forEach((x) => x.classList.remove("active"));
       b.classList.add("active");
 
+      revealCategoryButton(bar, b);
+
       showOrderItems();
     };
 
@@ -1557,6 +1571,10 @@ async function startOrder() {
 
   messages.appendChild(bar);
   enableCategoryBarScroll(bar);
+  const activeCategoryButton = bar.querySelector("button.active");
+  requestAnimationFrame(() =>
+    revealCategoryButton(bar, activeCategoryButton, "auto"),
+  );
   showOrderItems();
   if (orderCart.length > 0) showCartUI();
   scrollToBottom();
@@ -1663,6 +1681,8 @@ function showSizeSelector(product) {
   name.className = "quantity-product";
   name.textContent = product.name;
 
+  const ingredients = createProductIngredients(product.ingredients);
+
   const options = document.createElement("div");
   options.className = "size-options";
 
@@ -1672,7 +1692,8 @@ function showSizeSelector(product) {
     button.className = "size-option";
     button.textContent =
       (variant.size === "mały" ? "Mała" : "Duża") + " — " + variant.price;
-    button.onclick = () => showQuantitySelector(variant.item);
+    button.onclick = () =>
+      showQuantitySelector(variant.item, product.ingredients);
     options.appendChild(button);
   });
 
@@ -1682,7 +1703,9 @@ function showSizeSelector(product) {
   back.textContent = "⬅ Wróć";
   back.onclick = startOrder;
 
-  card.append(title, name, options, back);
+  card.append(name);
+  if (ingredients) card.append(ingredients);
+  card.append(title, options, back);
   messages.appendChild(card);
   scrollToBottom();
 }
@@ -1714,7 +1737,16 @@ function showCartToast() {
   setTimeout(() => toast.remove(), 1750);
 }
 
-function showQuantitySelector(item) {
+function createProductIngredients(ingredientsText) {
+  if (!String(ingredientsText || "").trim()) return null;
+
+  const ingredients = document.createElement("div");
+  ingredients.className = "product-ingredients-full";
+  ingredients.textContent = ingredientsText;
+  return ingredients;
+}
+
+function showQuantitySelector(item, ingredientsText) {
   clearChat();
 
   const itemDisplay = parseOrderItemDisplay(item);
@@ -1724,12 +1756,16 @@ function showQuantitySelector(item) {
 
   const title = document.createElement("div");
   title.className = "quantity-title";
-  title.textContent = "🍕 Ile porcji chcesz zamówić?";
+  title.textContent = "Wybierz ilość";
 
   const product = document.createElement("div");
   product.className = "quantity-product";
   product.textContent =
     itemDisplay.name + (itemDisplay.size ? " (" + itemDisplay.size + ")" : "");
+
+  const ingredients = createProductIngredients(
+    ingredientsText || itemDisplay.ingredients,
+  );
 
   const qty = document.createElement("div");
   qty.className = "quantity-options";
@@ -1750,7 +1786,7 @@ function showQuantitySelector(item) {
   moreBtn.className = "quantity-option more";
   moreBtn.textContent = "więcej";
   moreBtn.onclick = function () {
-    showMoreQuantitySelector(item);
+    showMoreQuantitySelector(item, ingredientsText);
   };
   qty.appendChild(moreBtn);
 
@@ -1762,15 +1798,16 @@ function showQuantitySelector(item) {
     startOrder();
   };
 
-  card.appendChild(title);
   card.appendChild(product);
+  if (ingredients) card.appendChild(ingredients);
+  card.appendChild(title);
   card.appendChild(qty);
   card.appendChild(back);
   messages.appendChild(card);
   scrollToBottom();
 }
 
-function showMoreQuantitySelector(item) {
+function showMoreQuantitySelector(item, ingredientsText) {
   clearChat();
 
   const itemDisplay = parseOrderItemDisplay(item);
@@ -1786,6 +1823,10 @@ function showMoreQuantitySelector(item) {
   product.className = "quantity-more-product";
   product.textContent =
     itemDisplay.name + (itemDisplay.size ? " (" + itemDisplay.size + ")" : "");
+
+  const ingredients = createProductIngredients(
+    ingredientsText || itemDisplay.ingredients,
+  );
 
   const select = document.createElement("select");
   select.className = "quantity-more-select";
@@ -1814,8 +1855,9 @@ function showMoreQuantitySelector(item) {
     startOrder();
   };
 
-  card.appendChild(title);
   card.appendChild(product);
+  if (ingredients) card.appendChild(ingredients);
+  card.appendChild(title);
   card.appendChild(select);
   card.appendChild(confirm);
   card.appendChild(back);
@@ -1870,7 +1912,8 @@ function showOrderItems() {
     } else {
       const display = parseOrderItemDisplay(product.item);
       price.textContent = display.price;
-      card.onclick = () => showQuantitySelector(product.item);
+      card.onclick = () =>
+        showQuantitySelector(product.item, product.ingredients);
     }
 
     card.appendChild(price);

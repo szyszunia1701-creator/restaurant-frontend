@@ -1125,22 +1125,15 @@ button,
 
   z-index: 5;
 
-  scrollbar-width: thin;
-  scrollbar-color: rgba(63, 127, 90, 0.45) transparent;
+  scrollbar-width: none;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
   overscroll-behavior-x: contain;
 }
 
 .category-bar::-webkit-scrollbar {
-  height: 7px;
-}
-
-.category-bar::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.category-bar::-webkit-scrollbar-thumb {
-  background: rgba(63, 127, 90, 0.42);
-  border-radius: 999px;
+  display: none;
 }
 
 .category-bar button {
@@ -1179,12 +1172,14 @@ button,
 }
 
 .category-bar button.active {
-  background: linear-gradient(135deg, #6faa7b, #3f7f5a);
+  background: linear-gradient(135deg, #741010, #a82020);
   color: #fff;
-  border-color: rgba(63, 127, 90, 0.5);
+  border-color: rgba(255, 214, 153, 0.7);
 
   transform: translateY(-1px);
-  box-shadow: 0 9px 20px rgba(63, 127, 90, 0.24);
+  box-shadow:
+    0 9px 20px rgba(84, 5, 5, 0.28),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.12);
 }
 
 /* ===== PRODUCT GRID ===== */
@@ -1588,12 +1583,11 @@ button,
     margin-right: -12px !important;
     padding: 10px 12px 12px !important;
     overflow-x: auto !important;
-    scrollbar-width: thin !important;
+    scrollbar-width: none !important;
   }
 
   .category-bar::-webkit-scrollbar {
-    height: 7px !important;
-    display: block !important;
+    display: none !important;
   }
 
   .category-bar button {
@@ -2541,6 +2535,22 @@ button,
   color: var(--brand-red);
   font-size: 15px;
   font-weight: 900;
+}
+
+.product-ingredients-full {
+  max-width: 100%;
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.quantity-card .quantity-title,
+.quantity-more-card .quantity-more-title {
+  margin-top: 16px;
 }
 
 .quantity-options {
