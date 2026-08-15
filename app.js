@@ -3,6 +3,10 @@ const API_BASE = "https://restaurant-backend-7i1c.onrender.com";
 
 let menuImages = [];
 let sandwichImages = [];
+let mediaLoadState = "loading";
+let menuLoadState = "loading";
+let mediaLoadPromise;
+let menuLoadPromise;
 
 async function saveMedia(key, urls) {
   const response = await fetch(`${API_BASE}/save-media`, {
@@ -148,6 +152,7 @@ function addMsg(text, cls) {
   d.textContent = text;
   messages.appendChild(d);
   scrollToBottom();
+  return d;
 }
 
 function scrollToBottom() {
@@ -276,13 +281,7 @@ function detectIntent(t) {
 }
 
 function isValidDate(t) {
-  t = t.toLowerCase();
-  if (/jutro|dziś|dzisiaj/.test(t)) return true;
-  const m = t.match(/(\d{1,2})[.\-/ ](\d{1,2})/);
-  if (!m) return false;
-  const d = parseInt(m[1], 10);
-  const mo = parseInt(m[2], 10);
-  return d >= 1 && d <= 31 && mo >= 1 && mo <= 12;
+  return getReservationDate(t) !== null;
 }
 
 function isValidTime(t) {
@@ -296,9 +295,45 @@ function isValidTime(t) {
   return false;
 }
 
-function isWithinOpeningHours(time) {
+function getReservationDate(dateText) {
+  const value = String(dateText || "").trim().toLowerCase();
+  const today = new Date();
+
+  if (["dzis", "dziś", "dzisiaj"].includes(value)) {
+    return today;
+  }
+
+  if (value === "jutro") {
+    return new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+  }
+
+  const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const shortMatch = value.match(/^(\d{1,2})[.\-/ ](\d{1,2})(?:[.\-/ ](\d{4}))?$/);
+
+  if (isoMatch) {
+    return new Date(
+      Number(isoMatch[1]),
+      Number(isoMatch[2]) - 1,
+      Number(isoMatch[3]),
+    );
+  }
+
+  if (shortMatch) {
+    return new Date(
+      Number(shortMatch[3]) || today.getFullYear(),
+      Number(shortMatch[2]) - 1,
+      Number(shortMatch[1]),
+    );
+  }
+
+  return null;
+}
+
+function isWithinOpeningHours(time, reservationDate) {
   const hour = parseInt(time.split(":")[0], 10);
-  const day = new Date().getDay();
+  const selectedDate = getReservationDate(reservationDate);
+  if (!selectedDate || Number.isNaN(selectedDate.getTime())) return false;
+  const day = selectedDate.getDay();
   const hours =
     day >= 1 && day <= 4 ? OPENING_HOURS.weekday : OPENING_HOURS.weekend;
   return hour >= hours.from && hour < hours.to;
@@ -331,19 +366,18 @@ function isValidSurname(t) {
   return Validator.surname(t);
 }
 
-function showMenu() {
+async function showMenu() {
   resetReservation();
   cancelStep = null;
 
-  if (menuImages.length) {
-    showMenuImages();
-    return;
+  let loadingMessage;
+  if (mediaLoadState === "loading") {
+    loadingMessage = addMsg("Ładowanie menu…", "bot");
+    await mediaLoadPromise;
+    if (loadingMessage && loadingMessage.parentNode) loadingMessage.remove();
   }
 
-  addMsg(
-    "Aktualnie nie dodano zdjęcia menu. Mogę sprawdzić konkretne danie albo pomóc z zamówieniem.",
-    "bot",
-  );
+  showMenuCard();
 }
 
 function startReservation() {
@@ -445,7 +479,7 @@ async function handleReservation(t) {
       addMsg("❗ Podaj poprawną godzinę (np. 18:00).", "bot");
       return;
     }
-    if (!isWithinOpeningHours(t)) {
+    if (!isWithinOpeningHours(t, reservation.date)) {
       addMsg(
         "❗ Restauracja przyjmuje rezerwacje tylko w godzinach pracy.",
         "bot",
@@ -810,20 +844,31 @@ function showSandwich() {
 }
 
 /* ===== SHOW MENU IMAGES IN CHAT ===== */
-function showMenuImages() {
-  if (!menuImages.length) return;
+function showMenuCard() {
+  const card = document.createElement("div");
+  card.className = "msg bot menu-card";
 
-  const container = document.createElement("div");
-  container.className = "menu-images";
+  const text = document.createElement("div");
+  text.className = "menu-card-text";
+  text.textContent = menuImages.length
+    ? "Proszę, oto nasze menu 🍽️"
+    : "Aktualnie nie dodano zdjęcia menu. Mogę sprawdzić konkretne danie albo pomóc z zamówieniem.";
+  card.appendChild(text);
 
-  menuImages.forEach((src) => {
-    const im = document.createElement("img");
-    im.src = src;
-    im.onclick = () => openMenuModal(src);
-    container.appendChild(im);
-  });
+  if (menuImages.length) {
+    const images = document.createElement("div");
+    images.className = "menu-card-images";
+    menuImages.slice(0, 3).forEach((src) => {
+      const im = document.createElement("img");
+      im.src = src;
+      im.alt = "Aktualne menu restauracji";
+      im.onclick = () => openMenuModal(src);
+      images.appendChild(im);
+    });
+    card.appendChild(images);
+  }
 
-  messages.appendChild(container);
+  messages.appendChild(card);
   scrollToBottom();
 }
 
@@ -951,10 +996,12 @@ async function loadMedia() {
     renderSandwichImages();
   } catch (error) {
     console.error(error);
+  } finally {
+    mediaLoadState = "ready";
   }
 }
 
-loadMedia();
+mediaLoadPromise = loadMedia();
 
 adminBtn.addEventListener("click", () => {
   setTimeout(renderSandwichImages, 200);
@@ -1044,7 +1091,7 @@ function showCartUI() {
         });
 
         /* dostawa */
-        const delivery = 5;
+        const delivery = getDeliveryCost();
 
         const deliveryRow = document.createElement("div");
         deliveryRow.style.display = "flex";
@@ -1063,7 +1110,7 @@ function showCartUI() {
         totalRow.style.marginTop = "8px";
         totalRow.style.fontWeight = "600";
 
-        const finalTotal = getCartTotal() + delivery;
+        const finalTotal = getFinalOrderTotal();
 
         totalRow.innerHTML = "<div>Razem</div><div>" + finalTotal + " zł</div>";
 
@@ -1279,7 +1326,7 @@ function showCartUI() {
                 body: JSON.stringify({
                   id: orderNumber,
                   items: [...orderCart],
-                  total: getCartTotal(),
+                  total: getFinalOrderTotal(),
                   address: orderData.address,
                   phone: orderData.phone,
                   status: "do potwierdzenia",
@@ -1311,7 +1358,7 @@ function showCartUI() {
 
             let msg = "✅ Zamówienie przyjęte\n\n";
             msg += "📦 Numer: #" + orderNumber + "\n";
-            msg += "💰 Razem: " + getCartTotal() + " zł\n";
+            msg += "💰 Razem: " + getFinalOrderTotal() + " zł\n";
             msg += "⏳ Szacowany czas: ok. 30 minut\n\n";
             msg += "🔔 Status: do potwierdzenia\n";
             msg +=
@@ -1419,9 +1466,23 @@ function getCartTotal() {
   return total;
 }
 
+function getDeliveryCost() {
+  return 5;
+}
+
+function getFinalOrderTotal() {
+  return getCartTotal() + getDeliveryCost();
+}
+
 const ORDER_CATEGORIES = {};
 
-function startOrder() {
+async function startOrder() {
+  if (menuLoadState === "loading") {
+    const loadingMessage = addMsg("Ładowanie menu…", "bot");
+    await menuLoadPromise;
+    if (loadingMessage && loadingMessage.parentNode) loadingMessage.remove();
+  }
+
   resetReservation();
   cancelStep = null;
   orderFlowActive = true;
@@ -2384,6 +2445,8 @@ async function loadMenuFromBackend() {
     }
   } catch (e) {
     console.error(e);
+  } finally {
+    menuLoadState = "ready";
   }
 }
 
@@ -2413,7 +2476,7 @@ function syncMenuWithOrderSystem() {
 }
 
 syncMenuWithOrderSystem();
-loadMenuFromBackend();
+menuLoadPromise = loadMenuFromBackend();
 
 let selectedCategory = null;
 
