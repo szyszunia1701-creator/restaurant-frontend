@@ -842,16 +842,26 @@ function showSandwich() {
   text.append(title, details);
   card.appendChild(text);
 
-  if (sandwichImages.length) {
+  function appendSandwichImage() {
+    if (!sandwichImages.length || card.querySelector(".sandwich-card-image")) {
+      return;
+    }
+
     const image = document.createElement("img");
     image.className = "sandwich-card-image";
     image.src = sandwichImages[0];
     image.alt = "Kanapka tygodnia";
+    image.onerror = () => image.remove();
     image.onclick = () => openMenuModal(image.src);
     card.appendChild(image);
   }
 
   messages.appendChild(card);
+  if (mediaLoadState === "loading") {
+    mediaLoadPromise.then(appendSandwichImage);
+  } else {
+    appendSandwichImage();
+  }
   scrollToBottom();
 }
 
@@ -1535,7 +1545,11 @@ async function startOrder() {
   const bar = document.createElement("div");
   bar.className = "category-bar";
 
-  const categories = Object.keys(ORDER_CATEGORIES);
+  const categories = Object.keys(ORDER_CATEGORIES).filter(
+    (category) =>
+      Array.isArray(ORDER_CATEGORIES[category]) &&
+      ORDER_CATEGORIES[category].length > 0,
+  );
 
   if (!categories.length) {
     addMsg("Menu zamówień jest chwilowo puste.", "bot");

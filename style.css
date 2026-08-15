@@ -1035,14 +1035,10 @@ button,
 }
 
 @media (max-width: 360px) {
-  .sandwich-card {
-    flex-wrap: wrap;
-  }
-
   .sandwich-card-image {
-    width: 100%;
-    height: 140px;
-    flex-basis: 100%;
+    width: 76px;
+    height: 76px;
+    flex-basis: 76px;
   }
 }
 
