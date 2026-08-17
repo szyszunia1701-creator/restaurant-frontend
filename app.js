@@ -1,5 +1,8 @@
 const RESTAURANT_NAME = "Wloska robota bistro";
 const API_BASE = "https://restaurant-backend-7i1c.onrender.com";
+const RESTAURANT_CONFIG = {
+  estimatedDeliveryTime: "około 30 minut",
+};
 
 let menuImages = [];
 let sandwichImages = [];
@@ -89,6 +92,7 @@ let reservation = {};
 let cancelStep = null;
 let cancelData = {};
 let orderFlowActive = false;
+let pendingConversationAction = null;
 const OPENING_HOURS = {
   weekday: { from: 12, to: 22 },
   weekend: { from: 12, to: 23 },
@@ -115,6 +119,7 @@ toggle.onclick = () => {
   if (!box.classList.contains("open")) {
     orderFlowActive = false;
     orderStep = null;
+    pendingConversationAction = null;
     messages.innerHTML = "";
     hideCartUI();
     return;
@@ -131,6 +136,7 @@ closeBtn.onclick = () => {
   box.classList.remove("open");
   orderFlowActive = false;
   orderStep = null;
+  pendingConversationAction = null;
   messages.innerHTML = "";
   hideCartUI();
 };
@@ -1381,7 +1387,10 @@ function showCartUI() {
             let msg = "✅ Zamówienie przyjęte\n\n";
             msg += "📦 Numer: #" + orderNumber + "\n";
             msg += "💰 Razem: " + getFinalOrderTotal() + " zł\n";
-            msg += "⏳ Szacowany czas: ok. 30 minut\n\n";
+            msg +=
+              "⏳ Szacowany czas: " +
+              RESTAURANT_CONFIG.estimatedDeliveryTime +
+              "\n\n";
             msg += "🔔 Status: do potwierdzenia\n";
             msg +=
               "📩 Gdy restauracja potwierdzi i zacznie przygotowywać zamówienie, otrzymasz SMS.";
@@ -1969,7 +1978,10 @@ function handleOrder(text) {
     let msg = "✅ Zamówienie przyjęte\n\n";
     msg += "📦 Numer: #" + orderNumber + "\n";
     msg += "💰 Razem: " + getCartTotal() + " zł\n";
-    msg += "⏳ Szacowany czas: ok. 30 minut\n\n";
+    msg +=
+      "⏳ Szacowany czas: " +
+      RESTAURANT_CONFIG.estimatedDeliveryTime +
+      "\n\n";
     msg += "🔔 Status: do potwierdzenia\n";
     msg +=
       "📩 Gdy restauracja potwierdzi i zacznie przygotowywać zamówienie, otrzymasz SMS.";
@@ -2329,8 +2341,14 @@ startOrder = function () {
 const oldDetectIntent = detectIntent;
 
 detectIntent = function (t) {
-  if (isMenuBrowsingIntent(t)) return "menu";
   if (isOrderIntent(t)) return "order";
+  if (isDeliveryTimeIntent(t)) return "delivery_time";
+  if (isDietaryIntent(t)) return "dietary";
+  if (isIngredientsIntent(t)) return "ingredients";
+  if (isPortionSizeIntent(t)) return "portion_size";
+  if (isCategoryDefinitionIntent(t)) return "category_definition";
+  if (isCategoryListingIntent(t)) return "category_listing";
+  if (isMenuBrowsingIntent(t)) return "menu";
 
   return oldDetectIntent(t);
 };
@@ -2348,6 +2366,58 @@ function isOrderIntent(text) {
   );
 }
 
+function isDeliveryTimeIntent(text) {
+  const query = normalizeChatText(text);
+  return (
+    /\b(ile|jak dlugo)\b.*\b(czeka|dostaw|jedzeni)\w*\b/.test(query) ||
+    /\b(jaki|jaka)\b.*\bczas\b.*\b(dostaw|realizac)\w*\b/.test(query) ||
+    /\bile\b.*\btrwa\b.*\b(realizac|dostaw)\w*\b/.test(query) ||
+    /\bkiedy\b.*\b(zamowieni|jedzeni)\w*\b/.test(query)
+  );
+}
+
+function isDietaryIntent(text) {
+  return /\b(bez laktoz|bez gluten|wegetarian|wegansk|wegan|bez miesa)\w*\b/.test(
+    normalizeChatText(text),
+  );
+}
+
+function isIngredientsIntent(text) {
+  const query = normalizeChatText(text);
+  return (
+    /\b(skladnik|sklad|zawiera)\w*\b/.test(query) ||
+    /\bco jest (na|w)\b/.test(query) ||
+    /\bz czym jest\b/.test(query)
+  );
+}
+
+function isPortionSizeIntent(text) {
+  const query = normalizeChatText(text);
+  return (
+    /\b(wielkosc|wielkosci|wymiar|wymiary)\w*\b/.test(query) ||
+    /\bjak (duza|duzy|duze)\b.*\b(porcj|pizza|kanapk)\w*\b/.test(query) ||
+    /\bile\b.*\bcm\b/.test(query)
+  );
+}
+
+function isCategoryDefinitionIntent(text) {
+  return /\b(czym jest|co to jest|co oznacza)\b/.test(normalizeChatText(text));
+}
+
+function isCategoryListingIntent(text) {
+  const query = normalizeChatText(text);
+  return /\b(co macie|co jest|pokaz)\b.*\b(w|z kategorii)\b/.test(query);
+}
+
+function isPendingActionResponse(text, type) {
+  const query = normalizeChatText(text);
+  if (type === "accept") {
+    return /^(tak|tak chce|jasne|poprosze|dobra|okej|ok|chce)(\b|$)/.test(query) ||
+      /\b(pomoz|pomoc)\b.*\b(zamowic|zlozyc zamowienie)\b/.test(query);
+  }
+  return /^(nie|nie dzieki|nie teraz|pozniej)(\b|$)/.test(query);
+}
+
 /* hook into sendMsg */
 
 const oldSendMsg = sendMsg;
@@ -2357,6 +2427,25 @@ sendMsg = function () {
 
   const text = input.value;
   const lower = text.toLowerCase();
+
+  if (pendingConversationAction === "order_confirmation") {
+    pendingConversationAction = null;
+
+    if (isPendingActionResponse(text, "accept")) {
+      input.value = "";
+      addMsg(text, "user");
+      startOrder();
+      return;
+    }
+
+    if (isPendingActionResponse(text, "reject")) {
+      input.value = "";
+      addMsg(text, "user");
+      addMsg("Jasne. W czym jeszcze mogę pomóc?", "bot");
+      return;
+    }
+  }
+
   const intent = detectIntent(lower);
 
   /* Global actions always interrupt an active conversational flow. */
@@ -2376,6 +2465,22 @@ sendMsg = function () {
     input.value = "";
     addMsg(text, "user");
     startOrder();
+    return;
+  }
+
+  if (
+    [
+      "delivery_time",
+      "dietary",
+      "ingredients",
+      "portion_size",
+      "category_definition",
+      "category_listing",
+    ].includes(intent)
+  ) {
+    input.value = "";
+    addMsg(text, "user");
+    askAI(text);
     return;
   }
 
@@ -3047,6 +3152,7 @@ function showMenuRecommendations(text) {
     `${popularityNote}${products}\n\nChcesz, żebym od razu pomógł złożyć zamówienie?`,
     "bot",
   );
+  pendingConversationAction = "order_confirmation";
 }
 
 function formatCurrentMenu() {
@@ -3107,6 +3213,10 @@ function getMenuItemsForSearch() {
         category,
         name: product.name,
         ingredients: product.ingredients || "",
+        sizes: product.sizes || null,
+        dietaryTags: Array.isArray(product.dietaryTags)
+          ? product.dietaryTags.map(normalizeChatText)
+          : [],
         priceText,
         searchText: normalizeChatText(category + " " + product.name),
       });
@@ -3114,6 +3224,48 @@ function getMenuItemsForSearch() {
   });
 
   return items;
+}
+
+function findMentionedCategory(text) {
+  const query = normalizeChatText(text);
+  return Object.keys(getAdminMenu()).find((category) =>
+    query.includes(normalizeChatText(category)),
+  );
+}
+
+function getCategoryDescription(category) {
+  const descriptions = RESTAURANT_CONFIG.categoryDescriptions || {};
+  const matchingKey = Object.keys(descriptions).find(
+    (key) => normalizeChatText(key) === normalizeChatText(category),
+  );
+  return matchingKey ? descriptions[matchingKey] : "";
+}
+
+function formatCategoryProducts(category) {
+  const products = getMenuItemsForSearch().filter(
+    (item) => item.category === category,
+  );
+
+  if (!products.length) {
+    return `Kategoria ${category} nie ma obecnie dostępnych pozycji.`;
+  }
+
+  return (
+    `W kategorii ${category} są dostępne:\n` +
+    products
+      .map((item) => `• ${item.name}${item.priceText ? ` — ${item.priceText}` : ""}`)
+      .join("\n")
+  );
+}
+
+function getRequestedDietaryFeature(text) {
+  const query = normalizeChatText(text);
+  if (/bez laktoz/.test(query)) return { tag: "bez laktozy", label: "bez laktozy" };
+  if (/bez gluten/.test(query)) return { tag: "bez glutenu", label: "bez glutenu" };
+  if (/wegetarian|bez miesa/.test(query)) {
+    return { tag: "wegetariańskie", label: "wegetariańskie" };
+  }
+  return { tag: "wegańskie", label: "wegańskie" };
 }
 
 function findMenuMatches(text) {
@@ -3200,12 +3352,27 @@ function answerFromRestaurantData(text) {
     return "📅 Mogę pomóc w rezerwacji stolika. Kliknij „📅 Rezerwacja” albo napisz, na jaki dzień chcesz zarezerwować stolik.";
   }
 
-  const ingredientsIntent =
-    /\b(skladnik|sklad|zawiera)\w*\b/.test(query) ||
-    /\bco jest (na|w)\b/.test(query) ||
-    /\bz czym jest\b/.test(query);
+  if (isDeliveryTimeIntent(text)) {
+    return `Szacowany czas realizacji zamówienia to ${RESTAURANT_CONFIG.estimatedDeliveryTime}.`;
+  }
 
-  if (ingredientsIntent) {
+  if (isDietaryIntent(text)) {
+    const feature = getRequestedDietaryFeature(text);
+    const confirmedItems = menuItems.filter((item) =>
+      item.dietaryTags.some((tag) => tag === normalizeChatText(feature.tag)),
+    );
+
+    if (!confirmedItems.length) {
+      return `Nie mam w menu zapisanej informacji, które pozycje są ${feature.label}. Mogę pokazać składniki konkretnych produktów.`;
+    }
+
+    return (
+      `Pozycje oznaczone w menu jako ${feature.label}:\n` +
+      confirmedItems.map((item) => `• ${item.name}`).join("\n")
+    );
+  }
+
+  if (isIngredientsIntent(text)) {
     const matches = findMenuMatches(text);
     const bestMatches = matches.length
       ? matches.filter((item) => item.score === matches[0].score)
@@ -3221,6 +3388,49 @@ function answerFromRestaurantData(text) {
     }
 
     return product.name + ": " + product.ingredients + ".";
+  }
+
+  if (isPortionSizeIntent(text)) {
+    const matches = findMenuMatches(text);
+    const productsWithSizes = matches.filter((item) => item.sizes);
+
+    if (productsWithSizes.length) {
+      const variants = new Set();
+      productsWithSizes.forEach((item) =>
+        Object.keys(item.sizes).forEach((size) => variants.add(size)),
+      );
+      const variantLabels = [...variants].map((size) => {
+        if (size === "small") return "małym";
+        if (size === "large") return "dużym";
+        return size;
+      });
+      return `Ten produkt jest dostępny w wariancie ${variantLabels.join(" i ")}, ale nie mam zapisanych dokładnych wymiarów.`;
+    }
+
+    if (/\bpizz\w*\b/.test(query)) {
+      return "Nie mam w systemie dokładnych wymiarów tej pizzy.";
+    }
+
+    return "Nie mam jeszcze zapisanej informacji o wielkości tej porcji.";
+  }
+
+  if (isCategoryDefinitionIntent(text)) {
+    const category = findMentionedCategory(text);
+    if (!category) {
+      return "Nie mam jeszcze zapisanego opisu tego pojęcia.";
+    }
+
+    const description = getCategoryDescription(category);
+    return description
+      ? `${category}: ${description}`
+      : `Nie mam jeszcze zapisanego opisu tej kategorii, ale mogę pokazać dostępne pozycje ${category}.`;
+  }
+
+  if (isCategoryListingIntent(text)) {
+    const category = findMentionedCategory(text);
+    return category
+      ? formatCategoryProducts(category)
+      : "Nie rozpoznałem kategorii. Mogę pokazać całe aktualne menu.";
   }
 
   // Pytanie o ofertę ma pierwszeństwo przed wyszukiwaniem nazwy produktu.
