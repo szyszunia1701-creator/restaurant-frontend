@@ -3,13 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Asystent online Restauracji – Demo</title>
+    <title>Restauracja</title>
+    <link id="restaurant-favicon" rel="icon" />
 
     <link rel="stylesheet" href="style.css?v=6" />
   </head>
 
   <body>
-    <h2>Przykładowa strona restauracji</h2>
+    <h2 id="restaurant-name"></h2>
     <p style="color: #666">Automatyczny asystent AI odpowiada klientom 24/7</p>
 
     <button id="admin-open-btn">Admin</button>
@@ -74,7 +75,7 @@
       <h3>Kanapka tygodnia</h3>
 
       <input id="admin-name" placeholder="Nazwa kanapki" />
-      <input id="admin-price" placeholder="Cena (np. 29 zł)" />
+      <input id="admin-price" placeholder="Cena" />
 
       <h3>Zdjęcia kanapki</h3>
       <input id="sandwich-images" type="file" multiple accept="image/*" />
@@ -88,12 +89,19 @@
       ><!-- moved to bottom by JS -->
     </div>
 
-    <div id="chat-toggle"><img src="logo-wloska-rozmowa.png" /></div>
+    <div id="chat-toggle" aria-label="Otwórz asystenta">
+      <img alt="Logo asystenta" />
+      <span class="chat-logo-fallback" aria-hidden="true">🍽️</span>
+    </div>
     <div id="chat-hint">Cześć 👋<br />Pomogę z zamówieniem i rezerwacją</div>
 
     <div id="chat-box">
       <div id="chat-header">
-        Asystent restauracji
+        <div class="chat-header-identity">
+          <img class="chat-header-logo" alt="Logo asystenta" />
+          <span class="chat-header-logo-fallback" aria-hidden="true">🍽️</span>
+          <span><strong id="assistant-name"></strong><small>Online</small></span>
+        </div>
         <button id="chat-close">✕</button>
       </div>
 
@@ -163,6 +171,7 @@
 
     <!-- ===== ADMIN MENU MANAGER (TABLE VERSION) ===== -->
 
+    <script src="restaurant-config.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

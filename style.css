@@ -2685,3 +2685,61 @@ button,
 .cart-added-actions {
   margin-top: 14px;
 }
+
+/* ===== CONFIGURABLE CHATBOT BRANDING ===== */
+.chat-logo-fallback,
+.chat-header-logo-fallback {
+  display: none;
+}
+
+#chat-toggle img.logo-unavailable {
+  display: none;
+}
+
+#chat-toggle img.logo-unavailable + .chat-logo-fallback {
+  display: flex;
+  width: 96px;
+  height: 96px;
+  margin: 24px auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--brand-red);
+  color: #fff;
+  font-size: 44px;
+  box-shadow: 0 12px 18px rgba(0, 0, 0, 0.28);
+}
+
+.chat-header-identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.chat-header-logo {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  border-radius: 50%;
+}
+
+.chat-header-logo.logo-unavailable {
+  display: none;
+}
+
+.chat-header-logo.logo-unavailable + .chat-header-logo-fallback {
+  display: block;
+  font-size: 26px;
+}
+
+.chat-header-identity strong,
+.chat-header-identity small {
+  display: block;
+}
+
+.chat-header-identity small {
+  margin-top: 2px;
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0.85;
+}
