@@ -1,9 +1,49 @@
-const RESTAURANT_NAME = "Wloska robota bistro";
 const API_BASE = "https://restaurant-backend-7i1c.onrender.com";
-const RESTAURANT_CONFIG = {
-  estimatedDeliveryTime: "około 30 minut",
-};
 
+function applyRestaurantBranding() {
+  document.title = RESTAURANT_CONFIG.name;
+  document.getElementById("restaurant-name").textContent = RESTAURANT_CONFIG.name;
+  document.getElementById("assistant-name").textContent = RESTAURANT_CONFIG.assistantName;
+  document.getElementById("restaurant-favicon").href =
+    RESTAURANT_CONFIG.branding.chatbotLogo;
+
+  document
+    .querySelectorAll("#chat-toggle img, .chat-header-logo")
+    .forEach((image) => {
+      image.src = RESTAURANT_CONFIG.branding.chatbotLogo;
+      image.alt = RESTAURANT_CONFIG.assistantName;
+      image.addEventListener("error", () =>
+        image.classList.add("logo-unavailable"),
+      );
+    });
+
+  document
+    .getElementById("chat-toggle")
+    .setAttribute("aria-label", `Otwórz ${RESTAURANT_CONFIG.assistantName}`);
+}
+
+function getOpeningHoursMessage() {
+  const hours = RESTAURANT_CONFIG.openingHours;
+  return `⏰ Godziny otwarcia:\n${hours.weekday.label}\n${hours.weekend.label}`;
+}
+
+function getContactMessage() {
+  const { phone, address } = RESTAURANT_CONFIG.contact;
+  const details = [];
+  if (phone) details.push(`📞 Telefon: ${phone}`);
+  if (address) details.push(`📍 Adres: ${address}`);
+  return details.length
+    ? details.join("\n")
+    : "Dane kontaktowe restauracji nie zostały jeszcze uzupełnione.";
+}
+
+function getEstimatedDeliveryTimeText() {
+  return `około ${RESTAURANT_CONFIG.delivery.estimatedTime} minut`;
+}
+
+function showWelcomeMessage() {
+  addMsg("Cześć! 👋\nW czym mogę Ci pomóc?", "bot");
+}
 let menuImages = [];
 let sandwichImages = [];
 let mediaLoadState = "loading";
@@ -71,7 +111,11 @@ function getTodayClosingHour() {
   if (custom) return parseInt(custom);
 
   const day = new Date().getDay();
-  return day >= 1 && day <= 4 ? 22 : 24;
+  const hours =
+    day >= 1 && day <= 4
+      ? RESTAURANT_CONFIG.openingHours.weekday
+      : RESTAURANT_CONFIG.openingHours.weekend;
+  return hours.to;
 }
 
 function pobierzKanapkeTygodnia() {
@@ -93,10 +137,9 @@ let cancelStep = null;
 let cancelData = {};
 let orderFlowActive = false;
 let pendingConversationAction = null;
-const OPENING_HOURS = {
-  weekday: { from: 12, to: 22 },
-  weekend: { from: 12, to: 23 },
-};
+const OPENING_HOURS = RESTAURANT_CONFIG.openingHours;
+
+applyRestaurantBranding();
 
 const hintTimeout = setTimeout(() => {
   hint.classList.add("show");
@@ -126,7 +169,7 @@ toggle.onclick = () => {
   }
 
   if (!messages.children.length) {
-    addMsg(`Cześć 👋 Jestem asystentem ${RESTAURANT_NAME}.`, "bot");
+    showWelcomeMessage();
     addQuick();
     document.getElementById("chat-input").style.display = "flex";
   }
@@ -617,7 +660,7 @@ function sendMsg() {
   }
   if (intent === "hours") {
     resetReservation();
-    addMsg("⏰ Pon–Czw 12–22\nPt–Nd 12–23", "bot");
+    addMsg(getOpeningHoursMessage(), "bot");
     return;
   }
   if (intent === "reserve") {
@@ -630,7 +673,7 @@ function sendMsg() {
   }
   if (intent === "contact") {
     resetReservation();
-    addMsg("📞 123 456 789\n📍 ul. Przykładowa 10", "bot");
+    addMsg(getContactMessage(), "bot");
     return;
   }
   if (intent === "greet") {
@@ -1389,7 +1432,7 @@ function showCartUI() {
             msg += "💰 Razem: " + getFinalOrderTotal() + " zł\n";
             msg +=
               "⏳ Szacowany czas: " +
-              RESTAURANT_CONFIG.estimatedDeliveryTime +
+              getEstimatedDeliveryTimeText() +
               "\n\n";
             msg += "🔔 Status: do potwierdzenia\n";
             msg +=
@@ -1469,7 +1512,7 @@ function hideCartUI() {
   }
 }
 
-/* ================= ORDER SYSTEM DEMO ================= */
+/* ================= ORDER SYSTEM ================= */
 
 let orderStep = null;
 let orderCategory = null;
@@ -1498,7 +1541,7 @@ function getCartTotal() {
 }
 
 function getDeliveryCost() {
-  return 5;
+  return RESTAURANT_CONFIG.delivery.fee;
 }
 
 function getFinalOrderTotal() {
@@ -1544,7 +1587,7 @@ async function startOrder() {
     orderFlowActive = false;
     orderStep = null;
     messages.innerHTML = "";
-    addMsg(`Cześć 👋 Jestem asystentem ${RESTAURANT_NAME}.`, "bot");
+    showWelcomeMessage();
     addQuick();
     document.getElementById("chat-input").style.display = "flex";
     hideCartUI();
@@ -1980,7 +2023,7 @@ function handleOrder(text) {
     msg += "💰 Razem: " + getCartTotal() + " zł\n";
     msg +=
       "⏳ Szacowany czas: " +
-      RESTAURANT_CONFIG.estimatedDeliveryTime +
+      getEstimatedDeliveryTimeText() +
       "\n\n";
     msg += "🔔 Status: do potwierdzenia\n";
     msg +=
@@ -1997,7 +2040,7 @@ function handleOrder(text) {
       orderFlowActive = false;
       orderStep = null;
       messages.innerHTML = "";
-      addMsg(`Cześć 👋 Jestem asystentem ${RESTAURANT_NAME}.`, "bot");
+      showWelcomeMessage();
       addQuick();
       document.getElementById("chat-input").style.display = "flex";
     };
@@ -2005,7 +2048,7 @@ function handleOrder(text) {
     const contactBtn = document.createElement("button");
     contactBtn.textContent = "Kontakt";
     contactBtn.onclick = function () {
-      addMsg("📞 123 456 789", "bot");
+      addMsg(getContactMessage(), "bot");
     };
 
     actions.appendChild(backBtn);
@@ -2065,7 +2108,7 @@ function showOrderSuccessScreen(msg) {
 
   setTimeout(function () {
     messages.innerHTML = "";
-    addMsg(`Cześć 👋 Jestem asystentem ${RESTAURANT_NAME}.`, "bot");
+    showWelcomeMessage();
     addQuick();
 
     document.getElementById("chat-input").style.display = "flex";
@@ -2099,7 +2142,7 @@ function showCart() {
     orderFlowActive = false;
     orderStep = null;
     messages.innerHTML = "";
-    addMsg(`Cześć 👋 Jestem asystentem ${RESTAURANT_NAME}.`, "bot");
+    showWelcomeMessage();
     addQuick();
     document.getElementById("chat-input").style.display = "flex";
   };
@@ -2107,7 +2150,7 @@ function showCart() {
   const contactBtn = document.createElement("button");
   contactBtn.textContent = "Kontakt";
   contactBtn.onclick = function () {
-    addMsg("📞 123 456 789", "bot");
+    addMsg(getContactMessage(), "bot");
   };
 
   actions.appendChild(backBtn);
@@ -3341,11 +3384,11 @@ function answerFromRestaurantData(text) {
   const menuItems = getMenuItemsForSearch();
 
   if (/godzin|otwar|czynne|zamkn|ktorej|kiedy/.test(query)) {
-    return "⏰ Godziny otwarcia:\nPon–Czw 12–22\nPt–Nd 12–23";
+    return getOpeningHoursMessage();
   }
 
   if (/kontakt|telefon|adres|gdzie|lokalizacja/.test(query)) {
-    return "📞 Telefon: 123 456 789\n📍 Adres: ul. Przykładowa 10";
+    return getContactMessage();
   }
 
   if (/rezerw|stolik|booking/.test(query)) {
@@ -3353,7 +3396,7 @@ function answerFromRestaurantData(text) {
   }
 
   if (isDeliveryTimeIntent(text)) {
-    return `Szacowany czas realizacji zamówienia to ${RESTAURANT_CONFIG.estimatedDeliveryTime}.`;
+    return `Szacowany czas realizacji zamówienia to ${getEstimatedDeliveryTimeText()}.`;
   }
 
   if (isDietaryIntent(text)) {
