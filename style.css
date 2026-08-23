@@ -11,8 +11,12 @@
   --brand-gold: #d7a94b;
   --brand-gold-light: #f0c76a;
   --brand-gold-soft: rgba(215, 169, 75, 0.18);
-  --text-primary: #f5f7fb;
-  --text-secondary: #aeb8c8;
+  /* Chat surfaces reuse the warm ivory already established in the admin panel. */
+  --chat-bg: #f6f1e9;
+  --surface: #fffdf9;
+  --surface-soft: #fff8ee;
+  --text-primary: #172233;
+  --text-secondary: #6f7884;
   --status-success: #16a34a;
   --status-error: #dc3545;
   --status-warning: #d97706;
@@ -2760,46 +2764,46 @@ button,
   opacity: 0.85;
 }
 
-/* ===== NAVY / BLUE / GOLD CHATBOT THEME ===== */
+/* ===== CREAM / NAVY / BLUE / GOLD CHATBOT THEME ===== */
 #chat-toggle {
-  width: 290px;
-  height: 128px;
-  right: -42px;
+  width: 248px;
+  height: 110px;
+  right: -34px;
   transition: transform 0.22s ease;
 }
 
 #chat-toggle:hover {
-  transform: scale(1.04);
+  transform: translateY(-2px) scale(1.035);
 }
 
 #chat-toggle img {
   filter:
-    drop-shadow(0 0 2px var(--brand-gold))
-    drop-shadow(0 10px 18px var(--brand-blue-soft));
+    drop-shadow(0 0 1px var(--brand-gold))
+    drop-shadow(0 9px 16px var(--brand-blue-soft));
 }
 
 #chat-toggle:hover img {
   filter:
-    drop-shadow(0 0 3px var(--brand-gold-light))
-    drop-shadow(0 12px 22px rgba(56, 167, 255, 0.34));
+    drop-shadow(0 0 2px var(--brand-gold-light))
+    drop-shadow(0 11px 20px rgba(56, 167, 255, 0.34));
 }
 
 #chat-hint {
-  right: 160px;
-  bottom: 128px;
+  right: 142px;
+  bottom: 116px;
   color: var(--text-primary);
-  background: var(--brand-navy-2);
-  border: 1px solid var(--brand-blue);
+  background: var(--surface);
+  border: 1px solid rgba(56, 167, 255, 0.48);
   border-left: 3px solid var(--brand-gold);
-  box-shadow: 0 8px 24px rgba(56, 167, 255, 0.22);
+  box-shadow: 0 8px 24px rgba(56, 167, 255, 0.18);
 }
 
 #chat-hint strong {
-  color: var(--brand-gold-light);
+  color: var(--brand-navy);
 }
 
 #chat-hint span {
-  color: var(--text-primary);
+  color: var(--text-secondary);
 }
 
 #chat-hint.show {
@@ -2807,17 +2811,17 @@ button,
 }
 
 #chat-box {
-  background: rgba(11, 19, 32, 0.94);
-  border-color: rgba(56, 167, 255, 0.32);
+  background: var(--chat-bg);
+  border-color: rgba(11, 19, 32, 0.15);
   box-shadow:
-    0 20px 55px rgba(0, 0, 0, 0.42),
-    0 0 28px rgba(56, 167, 255, 0.14);
+    0 20px 55px rgba(11, 19, 32, 0.24),
+    0 0 24px rgba(56, 167, 255, 0.1);
 }
 
 #chat-header {
   background: linear-gradient(135deg, var(--brand-navy), var(--brand-navy-2));
   border-bottom: 1px solid var(--brand-gold);
-  box-shadow: 0 8px 22px rgba(56, 167, 255, 0.2);
+  box-shadow: 0 8px 22px rgba(56, 167, 255, 0.16);
 }
 
 .chat-header-logo {
@@ -2827,20 +2831,36 @@ button,
 }
 
 #chat-messages {
-  background: linear-gradient(180deg, var(--brand-navy-2), var(--brand-navy));
   color: var(--text-primary);
+  background:
+    radial-gradient(circle at 100% 0, rgba(56, 167, 255, 0.07), transparent 32%),
+    radial-gradient(circle at 0 100%, rgba(215, 169, 75, 0.07), transparent 36%),
+    linear-gradient(180deg, var(--surface-soft), var(--chat-bg));
 }
 
 .user {
-  background: linear-gradient(135deg, #1677c8, var(--brand-blue));
+  color: #fff;
+  background: linear-gradient(135deg, var(--brand-navy-2), #176eae);
   box-shadow: 0 6px 16px var(--brand-blue-soft);
 }
 
 .bot {
   color: var(--text-primary);
-  background: var(--brand-surface);
-  border: 1px solid rgba(56, 167, 255, 0.14);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  background: var(--surface);
+  border: 1px solid rgba(11, 19, 32, 0.1);
+  box-shadow: 0 4px 14px rgba(11, 19, 32, 0.08);
+}
+
+/* Menu and sandwich messages inherit the same light card language. */
+.menu-card,
+.sandwich-card {
+  color: var(--text-primary);
+}
+
+.menu-card-images img,
+.sandwich-card-image {
+  border: 1px solid rgba(11, 19, 32, 0.1);
+  box-shadow: 0 7px 18px rgba(11, 19, 32, 0.12);
 }
 
 .quick button,
@@ -2848,10 +2868,10 @@ button,
 .size-option,
 .quantity-option,
 .quantity-more-back {
-  color: var(--text-primary);
-  background: var(--brand-navy-2);
-  border: 1px solid rgba(56, 167, 255, 0.62);
-  box-shadow: 0 4px 12px var(--brand-blue-soft);
+  color: var(--brand-navy);
+  background: var(--surface);
+  border: 1px solid rgba(56, 167, 255, 0.42);
+  box-shadow: 0 4px 12px rgba(11, 19, 32, 0.06);
 }
 
 .quick button:hover,
@@ -2859,10 +2879,10 @@ button,
 .size-option:hover,
 .quantity-option:hover,
 .quantity-more-back:hover {
-  color: var(--text-primary);
-  background: var(--brand-surface);
-  border-color: var(--brand-blue-hover);
-  box-shadow: 0 8px 20px rgba(56, 167, 255, 0.3);
+  color: var(--brand-navy);
+  background: #edf8ff;
+  border-color: var(--brand-blue);
+  box-shadow: 0 8px 20px rgba(56, 167, 255, 0.24);
 }
 
 .quick button:focus-visible,
@@ -2881,8 +2901,8 @@ button,
 .size-option.selected,
 .quantity-option.active,
 .quantity-option.selected {
-  color: var(--text-primary);
-  background: var(--brand-navy-2);
+  color: var(--brand-navy);
+  background: #fffaf0;
   border-color: var(--brand-gold);
   box-shadow:
     0 0 0 1px var(--brand-gold),
@@ -2910,13 +2930,13 @@ button,
 }
 
 #chat-input {
-  background: var(--brand-navy-2);
-  border-top-color: rgba(56, 167, 255, 0.24);
+  background: var(--surface);
+  border-top-color: rgba(11, 19, 32, 0.1);
 }
 
 #chat-input input {
   color: var(--text-primary);
-  background: var(--brand-surface);
+  background: var(--surface);
 }
 
 #chat-input input::placeholder {
@@ -2938,21 +2958,21 @@ button,
   color: var(--text-primary) !important;
   background:
     radial-gradient(circle at top right, var(--brand-blue-soft), transparent 38%),
-    linear-gradient(145deg, var(--brand-surface), var(--brand-navy-2)) !important;
+    linear-gradient(145deg, var(--surface), var(--surface-soft)) !important;
 }
 
 #bottom-cart-total,
 .bottom-cart-item-price,
 .cart-added-total {
-  color: var(--brand-gold-light) !important;
+  color: var(--brand-gold) !important;
 }
 
 .bottom-cart-empty,
 .bottom-cart-item,
 .bottom-cart-controls {
   color: var(--text-primary);
-  background: rgba(22, 34, 53, 0.94);
-  border-color: rgba(56, 167, 255, 0.2);
+  background: rgba(255, 253, 249, 0.94);
+  border-color: rgba(11, 19, 32, 0.12);
 }
 
 .bottom-cart-item-name,
@@ -2965,8 +2985,8 @@ button,
 }
 
 .bottom-cart-qty-btn {
-  background: var(--brand-navy-2) !important;
-  color: var(--brand-blue-hover) !important;
+  background: var(--surface) !important;
+  color: #1677c8 !important;
   border: 1px solid var(--brand-blue) !important;
 }
 
@@ -2988,8 +3008,8 @@ button,
 }
 
 .category-bar {
-  background: rgba(11, 19, 32, 0.96);
-  border-bottom-color: rgba(56, 167, 255, 0.24);
+  background: rgba(246, 241, 233, 0.96);
+  border-bottom-color: rgba(56, 167, 255, 0.18);
 }
 
 .product-card,
@@ -2998,16 +3018,22 @@ button,
 .cart-added-card {
   color: var(--text-primary);
   background:
-    radial-gradient(circle at top right, var(--brand-blue-soft), transparent 36%),
-    linear-gradient(145deg, var(--brand-surface), var(--brand-navy-2));
-  border-color: rgba(56, 167, 255, 0.2);
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.24);
+    radial-gradient(circle at 100% 100%, rgba(11, 19, 32, 0.09), transparent 42%),
+    radial-gradient(circle at 100% 0, rgba(56, 167, 255, 0.08), transparent 34%),
+    linear-gradient(145deg, var(--surface), var(--surface-soft));
+  border-color: rgba(11, 19, 32, 0.12);
+  box-shadow: 0 8px 22px rgba(11, 19, 32, 0.09);
+}
+
+.product-card::before {
+  background: linear-gradient(160deg, transparent 58%, rgba(11, 19, 32, 0.055));
+  opacity: 1;
 }
 
 .product-card:hover {
   border-color: var(--brand-blue);
   box-shadow:
-    0 14px 28px rgba(0, 0, 0, 0.3),
+    0 14px 28px rgba(11, 19, 32, 0.12),
     0 0 20px var(--brand-blue-soft);
 }
 
@@ -3015,7 +3041,9 @@ button,
 .product-card.selected,
 .product-card.active {
   border-color: var(--brand-gold);
-  box-shadow: 0 0 20px var(--brand-gold-soft);
+  box-shadow:
+    0 0 0 1px var(--brand-gold),
+    0 0 20px var(--brand-gold-soft);
 }
 
 .product-name,
@@ -3023,7 +3051,7 @@ button,
 .quantity-more-title,
 .cart-added-title,
 .cart-added-price {
-  color: var(--text-primary);
+  color: var(--brand-navy);
 }
 
 .product-ingredients,
@@ -3037,18 +3065,18 @@ button,
 .quantity-product,
 .quantity-more-product,
 .cart-added-name {
-  color: var(--brand-gold-light) !important;
+  color: #9a6a0d !important;
   background: var(--brand-gold-soft);
 }
 
 .product-card::after {
-  color: var(--brand-blue-hover);
+  color: #1677c8;
   background: var(--brand-blue-soft);
 }
 
 .quantity-more-select {
   color: var(--text-primary);
-  background: var(--brand-navy-2);
+  background: var(--surface);
   border-color: var(--brand-blue);
 }
 
@@ -3062,17 +3090,23 @@ button,
 
 @media (max-width: 760px) {
   #chat-toggle {
-    width: 221px;
-    height: 99px;
-    right: -49px;
-    bottom: 18px;
+    width: 190px;
+    height: 86px;
+    right: -37px;
+    bottom: 16px;
     min-width: 48px;
     min-height: 48px;
   }
 
   #chat-hint {
-    right: 90px;
-    bottom: 105px;
+    right: 78px;
+    bottom: 94px;
+    max-width: min(260px, calc(100vw - 98px));
+  }
+
+  #chat-box,
+  #chat-messages {
+    max-width: 100vw;
   }
 
   .product-size {
