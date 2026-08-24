@@ -160,6 +160,7 @@ toggle.onclick = () => {
   clearTimeout(hintTimeout);
 
   if (!box.classList.contains("open")) {
+    cancelPendingBotReplies();
     orderFlowActive = false;
     orderStep = null;
     pendingConversationAction = null;
@@ -176,6 +177,7 @@ toggle.onclick = () => {
 };
 
 closeBtn.onclick = () => {
+  cancelPendingBotReplies();
   box.classList.remove("open");
   orderFlowActive = false;
   orderStep = null;
@@ -196,6 +198,15 @@ function cancelReservation() {
 }
 
 function addMsg(text, cls) {
+  if (cls === "bot") {
+    return botReply(() => appendMsg(text, cls));
+  }
+
+  cancelPendingBotReplies();
+  return appendMsg(text, cls);
+}
+
+function appendMsg(text, cls) {
   const d = document.createElement("div");
   d.className = "msg " + cls;
   d.textContent = text;
@@ -208,6 +219,72 @@ function scrollToBottom() {
   requestAnimationFrame(() => {
     messages.scrollTop = messages.scrollHeight;
   });
+}
+
+const BOT_TYPING_DELAY = 1500;
+let typingIndicator = null;
+let botReplyGeneration = 0;
+let botReplyQueue = Promise.resolve();
+
+function removeTypingIndicator() {
+  if (typingIndicator) {
+    typingIndicator.remove();
+    typingIndicator = null;
+  }
+}
+
+function cancelPendingBotReplies() {
+  botReplyGeneration += 1;
+  removeTypingIndicator();
+  botReplyQueue = Promise.resolve();
+}
+
+function showTypingIndicator(duration = BOT_TYPING_DELAY, generation = botReplyGeneration) {
+  removeTypingIndicator();
+
+  const indicator = document.createElement("div");
+  indicator.className = "msg bot typing-indicator";
+  indicator.setAttribute("role", "status");
+  indicator.setAttribute("aria-label", "Asystent przygotowuje odpowiedź");
+
+  for (let index = 0; index < 3; index += 1) {
+    const dot = document.createElement("span");
+    dot.className = "typing-dot";
+    dot.setAttribute("aria-hidden", "true");
+    indicator.appendChild(dot);
+  }
+
+  typingIndicator = indicator;
+  messages.appendChild(indicator);
+  scrollToBottom();
+
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      if (generation === botReplyGeneration && typingIndicator === indicator) {
+        removeTypingIndicator();
+      } else {
+        indicator.remove();
+      }
+      resolve(generation === botReplyGeneration);
+    }, duration);
+  });
+}
+
+function botReply(renderResponse) {
+  const generation = botReplyGeneration;
+  const queuedReply = botReplyQueue.then(async () => {
+    if (generation !== botReplyGeneration) return false;
+
+    const isCurrent = await showTypingIndicator(BOT_TYPING_DELAY, generation);
+    if (!isCurrent) return false;
+
+    renderResponse();
+    scrollToBottom();
+    return true;
+  });
+
+  botReplyQueue = queuedReply.catch(() => {});
+  return queuedReply;
 }
 
 new MutationObserver(scrollToBottom).observe(messages, { childList: true });
@@ -428,17 +505,16 @@ function isValidSurname(t) {
 }
 
 async function showMenu() {
+  const generation = botReplyGeneration;
   resetReservation();
   cancelStep = null;
 
-  let loadingMessage;
   if (mediaLoadState === "loading") {
-    loadingMessage = addMsg("Ładowanie menu…", "bot");
     await mediaLoadPromise;
-    if (loadingMessage && loadingMessage.parentNode) loadingMessage.remove();
   }
 
-  showMenuCard();
+  if (generation !== botReplyGeneration) return false;
+  return botReply(showMenuCard);
 }
 
 function startReservation() {
@@ -876,6 +952,10 @@ window.addEventListener("DOMContentLoaded", function () {
 });
 
 function showSandwich() {
+  return botReply(renderSandwichCard);
+}
+
+function renderSandwichCard() {
   const card = document.createElement("div");
   card.className = "msg bot sandwich-card";
 
@@ -2062,6 +2142,10 @@ function handleOrder(text) {
 }
 
 function showOrderSuccessScreen(msg) {
+  return botReply(() => renderOrderSuccessScreen(msg));
+}
+
+function renderOrderSuccessScreen(msg) {
   messages.innerHTML = "";
 
   orderFlowActive = false;

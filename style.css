@@ -743,6 +743,47 @@ button,
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
 }
 
+.typing-indicator {
+  display: flex;
+  align-items: center;
+  width: fit-content;
+  min-width: 48px;
+  min-height: 20px;
+  gap: 5px;
+  padding: 9px 12px;
+  background: var(--surface, #fffdf8);
+  box-shadow: 0 4px 12px rgba(11, 19, 32, 0.09);
+}
+
+.typing-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--brand-navy, #17345c);
+  animation: typingDotBounce 1s ease-in-out infinite;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes typingDotBounce {
+  0%,
+  60%,
+  100% {
+    opacity: 0.45;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
 .quick {
   display: flex;
   gap: 6px;
@@ -3105,6 +3146,11 @@ button,
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .typing-dot {
+    animation: none;
+    opacity: 0.75;
+  }
+
   *,
   *::before,
   *::after {
