@@ -42,7 +42,10 @@ function getEstimatedDeliveryTimeText() {
 }
 
 function showWelcomeMessage() {
-  addMsg("Cześć! 👋\nW czym mogę Ci pomóc?", "bot");
+  return botReply(() => {
+    addMsg("Cześć! 👋\nW czym mogę Ci pomóc?", "bot");
+    addQuick();
+  });
 }
 let menuImages = [];
 let sandwichImages = [];
@@ -171,7 +174,6 @@ toggle.onclick = () => {
 
   if (!messages.children.length) {
     showWelcomeMessage();
-    addQuick();
     document.getElementById("chat-input").style.display = "flex";
   }
 };
@@ -193,26 +195,28 @@ function resetReservation() {
 
 function cancelReservation() {
   resetReservation();
-  addMsg("Rezerwacja została przerwana. W czym mogę pomóc?", "bot");
-  addQuick();
+  botReply(() => {
+    addMsg("Rezerwacja została przerwana. W czym mogę pomóc?", "bot");
+    addQuick();
+  });
 }
 
 function addMsg(text, cls) {
-  if (cls === "bot") {
-    return botReply(() => appendMsg(text, cls));
-  }
-
-  cancelPendingBotReplies();
-  return appendMsg(text, cls);
-}
-
-function appendMsg(text, cls) {
   const d = document.createElement("div");
   d.className = "msg " + cls;
   d.textContent = text;
   messages.appendChild(d);
   scrollToBottom();
   return d;
+}
+
+function botMessage(text) {
+  return botReply(() => addMsg(text, "bot"));
+}
+
+function userMessage(text) {
+  cancelPendingBotReplies();
+  return addMsg(text, "user");
 }
 
 function scrollToBottom() {
@@ -525,7 +529,7 @@ function startReservation() {
   orderStep = null;
   orderCategory = null;
   reservationStep = "date";
-  addMsg("📅 Na jaki dzień chcesz zarezerwować stolik?", "bot");
+  botMessage("📅 Na jaki dzień chcesz zarezerwować stolik?");
 }
 
 function startCancel() {
@@ -534,26 +538,24 @@ function startCancel() {
   orderCategory = null;
   cancelData = {};
   cancelStep = "lastname";
-  addMsg("Aby anulować rezerwację, podaj nazwisko:", "bot");
+  botMessage("Aby anulować rezerwację, podaj nazwisko:");
 }
 
 async function handleCancel(text) {
   if (cancelStep === "lastname") {
     if (!isValidSurname(text)) {
-      addMsg(
-        "❗ Podaj poprawne nazwisko (bez cyfr i znaków specjalnych).",
-        "bot",
-      );
+      botMessage(
+        "❗ Podaj poprawne nazwisko (bez cyfr i znaków specjalnych).");
       return;
     }
     cancelData.lastname = text;
     cancelStep = "phone";
-    addMsg("Podaj numer telefonu:", "bot");
+    botMessage("Podaj numer telefonu:");
     return;
   }
   if (cancelStep === "phone") {
     if (!isValidPhone(text)) {
-      addMsg("❗ Podaj poprawny numer telefonu.", "bot");
+      botMessage("❗ Podaj poprawny numer telefonu.");
       return;
     }
 
@@ -579,23 +581,26 @@ async function handleCancel(text) {
       const data = await response.json();
 
       if (!data.success) {
-        addMsg("❗ Nie znaleziono rezerwacji dla podanych danych.", "bot");
-        addQuick();
+        await botReply(() => {
+          addMsg("❗ Nie znaleziono rezerwacji dla podanych danych.", "bot");
+          addQuick();
+        });
         document.getElementById("chat-input").style.display = "flex";
         return;
       }
     } catch (e) {
       console.error(e);
-      addMsg("❌ Nie udało się anulować rezerwacji. Spróbuj ponownie.", "bot");
+      botMessage("❌ Nie udało się anulować rezerwacji. Spróbuj ponownie.");
       return;
     }
 
-    addMsg(
-      "❌ Rezerwacja została anulowana. W czym mogę pomóc dalej? 🙂",
-      "bot",
-    );
-
-    addQuick();
+    await botReply(() => {
+      addMsg(
+        "❌ Rezerwacja została anulowana. W czym mogę pomóc dalej? 🙂",
+        "bot",
+      );
+      addQuick();
+    });
     document.getElementById("chat-input").style.display = "flex";
   }
 }
@@ -603,57 +608,53 @@ async function handleCancel(text) {
 async function handleReservation(t) {
   if (reservationStep === "date") {
     if (!isValidDate(t)) {
-      addMsg("❗ Podaj poprawną datę (np. 12.03 lub jutro).", "bot");
+      botMessage("❗ Podaj poprawną datę (np. 12.03 lub jutro).");
       return;
     }
     reservation.date = t;
     reservationStep = "time";
-    addMsg("⏰ O której godzinie? (np. 18:00)", "bot");
+    botMessage("⏰ O której godzinie? (np. 18:00)");
     return;
   }
   if (reservationStep === "time") {
     if (!isValidTime(t)) {
-      addMsg("❗ Podaj poprawną godzinę (np. 18:00).", "bot");
+      botMessage("❗ Podaj poprawną godzinę (np. 18:00).");
       return;
     }
     if (!isWithinOpeningHours(t, reservation.date)) {
-      addMsg(
-        "❗ Restauracja przyjmuje rezerwacje tylko w godzinach pracy.",
-        "bot",
-      );
+      botMessage(
+        "❗ Restauracja przyjmuje rezerwacje tylko w godzinach pracy.");
       return;
     }
     reservation.time = t;
     reservationStep = "people";
-    addMsg("👥 Na ile osób?", "bot");
+    botMessage("👥 Na ile osób?");
     return;
   }
   if (reservationStep === "people") {
     if (!isValidPeople(t)) {
-      addMsg("❗ Podaj liczbę osób (1–20).", "bot");
+      botMessage("❗ Podaj liczbę osób (1–20).");
       return;
     }
     reservation.people = t;
     reservationStep = "lastname";
-    addMsg("🧾 Na jakie nazwisko?", "bot");
+    botMessage("🧾 Na jakie nazwisko?");
     return;
   }
   if (reservationStep === "lastname") {
     if (!isValidSurname(t)) {
-      addMsg(
-        "❗ Podaj poprawne nazwisko (bez cyfr i znaków specjalnych).",
-        "bot",
-      );
+      botMessage(
+        "❗ Podaj poprawne nazwisko (bez cyfr i znaków specjalnych).");
       return;
     }
     reservation.lastname = t;
     reservationStep = "phone";
-    addMsg("📞 Numer telefonu?", "bot");
+    botMessage("📞 Numer telefonu?");
     return;
   }
   if (reservationStep === "phone") {
     if (!isValidPhone(t)) {
-      addMsg("❗ Podaj poprawny numer telefonu.", "bot");
+      botMessage("❗ Podaj poprawny numer telefonu.");
       return;
     }
     reservation.phone = t;
@@ -682,12 +683,13 @@ async function handleReservation(t) {
       reservation.reservationId = data.reservationId || "";
     } catch (e) {
       console.error(e);
-      addMsg("❌ Nie udało się zapisać rezerwacji. Spróbuj ponownie.", "bot");
+      botMessage("❌ Nie udało się zapisać rezerwacji. Spróbuj ponownie.");
       return;
     }
 
-    addMsg(
-      `✅ Rezerwacja przyjęta:
+    await botReply(() => {
+      addMsg(
+        `✅ Rezerwacja przyjęta:
 
         🔢 Numer rezerwacji: ${reservation.reservationId}
         📅 ${reservation.date}
@@ -698,18 +700,19 @@ async function handleReservation(t) {
 
         Jeśli chcesz anulować rezerwację,
         kliknij przycisk poniżej lub napisz w czacie.`,
-      "bot",
-    );
+        "bot",
+      );
 
-    const q = document.createElement("div");
-    q.className = "quick";
-    const b = document.createElement("button");
-    b.textContent = "❌ Anuluj rezerwację";
-    b.onclick = () => {
-      startCancel();
-    };
-    q.appendChild(b);
-    messages.appendChild(q);
+      const q = document.createElement("div");
+      q.className = "quick";
+      const b = document.createElement("button");
+      b.textContent = "❌ Anuluj rezerwację";
+      b.onclick = () => {
+        startCancel();
+      };
+      q.appendChild(b);
+      messages.appendChild(q);
+    });
   }
 }
 
@@ -718,7 +721,7 @@ function sendMsg() {
   const text = input.value;
   const lower = text.toLowerCase();
   input.value = "";
-  addMsg(text, "user");
+  userMessage(text);
 
   const intent = detectIntent(lower);
 
@@ -736,7 +739,7 @@ function sendMsg() {
   }
   if (intent === "hours") {
     resetReservation();
-    addMsg(getOpeningHoursMessage(), "bot");
+    botMessage(getOpeningHoursMessage());
     return;
   }
   if (intent === "reserve") {
@@ -749,12 +752,12 @@ function sendMsg() {
   }
   if (intent === "contact") {
     resetReservation();
-    addMsg(getContactMessage(), "bot");
+    botMessage(getContactMessage());
     return;
   }
   if (intent === "greet") {
     resetReservation();
-    addMsg("Cześć 👋 Jak mogę pomóc?", "bot");
+    botMessage("Cześć 👋 Jak mogę pomóc?");
     return;
   }
 
@@ -1497,7 +1500,7 @@ function showCartUI() {
               submit.style.opacity = "1";
               submit.style.cursor = "pointer";
 
-              addMsg("❌ Nie udało się zapisać zamówienia.", "bot");
+              botMessage("❌ Nie udało się zapisać zamówienia.");
 
               return;
             }
@@ -1632,11 +1635,13 @@ const ORDER_CATEGORIES = {};
 
 async function startOrder() {
   if (menuLoadState === "loading") {
-    const loadingMessage = addMsg("Ładowanie menu…", "bot");
     await menuLoadPromise;
-    if (loadingMessage && loadingMessage.parentNode) loadingMessage.remove();
   }
 
+  return botReply(renderOrderFlow);
+}
+
+function renderOrderFlow() {
   resetReservation();
   cancelStep = null;
   orderFlowActive = true;
@@ -1646,7 +1651,10 @@ async function startOrder() {
 
   orderStep = "category";
 
-  addMsg("🛒 Składanie zamówienia online\nProszę wybrać kategorię:", "bot");
+  addMsg(
+    "🛒 Składanie zamówienia online\nProszę wybrać kategorię:",
+    "bot",
+  );
 
   // style the container wider and center text
   const orderMsg = messages.lastChild;
@@ -1668,7 +1676,6 @@ async function startOrder() {
     orderStep = null;
     messages.innerHTML = "";
     showWelcomeMessage();
-    addQuick();
     document.getElementById("chat-input").style.display = "flex";
     hideCartUI();
   };
@@ -1814,6 +1821,10 @@ function groupOrderItems(items) {
 }
 
 function showSizeSelector(product) {
+  return botReply(() => renderSizeSelector(product));
+}
+
+function renderSizeSelector(product) {
   clearChat();
 
   const card = document.createElement("div");
@@ -1893,6 +1904,10 @@ function createProductIngredients(ingredientsText) {
 }
 
 function showQuantitySelector(item, ingredientsText) {
+  return botReply(() => renderQuantitySelector(item, ingredientsText));
+}
+
+function renderQuantitySelector(item, ingredientsText) {
   clearChat();
 
   const itemDisplay = parseOrderItemDisplay(item);
@@ -2075,7 +2090,7 @@ function handleOrder(text) {
     const n = parseInt(text);
 
     if (!n || n < 1) {
-      addMsg("❗ Podaj poprawną ilość.", "bot");
+      botMessage("❗ Podaj poprawną ilość.");
       return;
     }
 
@@ -2088,7 +2103,7 @@ function handleOrder(text) {
     orderData.address = text;
     orderStep = "phone";
 
-    addMsg("📞 Podaj numer telefonu:", "bot");
+    botMessage("📞 Podaj numer telefonu:");
     return;
   }
 
@@ -2109,7 +2124,7 @@ function handleOrder(text) {
     msg +=
       "📩 Gdy restauracja potwierdzi i zacznie przygotowywać zamówienie, otrzymasz SMS.";
 
-    addMsg(msg, "bot");
+    botMessage(msg);
 
     const actions = document.createElement("div");
     actions.className = "quick";
@@ -2121,14 +2136,13 @@ function handleOrder(text) {
       orderStep = null;
       messages.innerHTML = "";
       showWelcomeMessage();
-      addQuick();
       document.getElementById("chat-input").style.display = "flex";
     };
 
     const contactBtn = document.createElement("button");
     contactBtn.textContent = "Kontakt";
     contactBtn.onclick = function () {
-      addMsg(getContactMessage(), "bot");
+      botMessage(getContactMessage());
     };
 
     actions.appendChild(backBtn);
@@ -2193,7 +2207,6 @@ function renderOrderSuccessScreen(msg) {
   setTimeout(function () {
     messages.innerHTML = "";
     showWelcomeMessage();
-    addQuick();
 
     document.getElementById("chat-input").style.display = "flex";
   }, 6500);
@@ -2227,14 +2240,13 @@ function showCart() {
     orderStep = null;
     messages.innerHTML = "";
     showWelcomeMessage();
-    addQuick();
     document.getElementById("chat-input").style.display = "flex";
   };
 
   const contactBtn = document.createElement("button");
   contactBtn.textContent = "Kontakt";
   contactBtn.onclick = function () {
-    addMsg(getContactMessage(), "bot");
+    botMessage(getContactMessage());
   };
 
   actions.appendChild(backBtn);
@@ -2442,12 +2454,12 @@ startOrder = function () {
   cancelStep = null;
 
   if (!isRestaurantOpen()) {
-    addMsg("❌ Restauracja jest obecnie zamknięta.", "bot");
+    botMessage("❌ Restauracja jest obecnie zamknięta.");
     return;
   }
 
   if (isSpecialClosedDay()) {
-    addMsg("❌ Dziś restauracja jest zamknięta.", "bot");
+    botMessage("❌ Dziś restauracja jest zamknięta.");
     return;
   }
 
@@ -2455,13 +2467,15 @@ startOrder = function () {
   const hour = now.getHours();
   /*
         if(hour >= getTodayClosingHour()){
-        addMsg("❌ Restauracja jest już zamknięta na dziś.","bot");
+        botMessage("❌ Restauracja jest już zamknięta na dziś.");
         return;
         }
         */
-  originalStartOrder();
-  if (orderCart.length > 0) showCartUI();
-  scrollToBottom();
+  return originalStartOrder().then((rendered) => {
+    if (rendered && orderCart.length > 0) showCartUI();
+    scrollToBottom();
+    return rendered;
+  });
 };
 
 /* detect order intent */
@@ -2560,15 +2574,15 @@ sendMsg = function () {
 
     if (isPendingActionResponse(text, "accept")) {
       input.value = "";
-      addMsg(text, "user");
+      userMessage(text);
       startOrder();
       return;
     }
 
     if (isPendingActionResponse(text, "reject")) {
       input.value = "";
-      addMsg(text, "user");
-      addMsg("Jasne. W czym jeszcze mogę pomóc?", "bot");
+      userMessage(text);
+      botMessage("Jasne. W czym jeszcze mogę pomóc?");
       return;
     }
   }
@@ -2578,7 +2592,7 @@ sendMsg = function () {
   /* Global actions always interrupt an active conversational flow. */
   if (reservationStep && intent === "cancel") {
     input.value = "";
-    addMsg(text, "user");
+    userMessage(text);
     cancelReservation();
     return;
   }
@@ -2590,7 +2604,7 @@ sendMsg = function () {
 
   if (intent === "order") {
     input.value = "";
-    addMsg(text, "user");
+    userMessage(text);
     startOrder();
     return;
   }
@@ -2606,7 +2620,7 @@ sendMsg = function () {
     ].includes(intent)
   ) {
     input.value = "";
-    addMsg(text, "user");
+    userMessage(text);
     askAI(text);
     return;
   }
@@ -2614,14 +2628,14 @@ sendMsg = function () {
   /* Only non-global input is interpreted as the current flow's next step. */
   if (reservationStep) {
     input.value = "";
-    addMsg(text, "user");
+    userMessage(text);
     handleReservation(text);
     return;
   }
 
   if (cancelStep) {
     input.value = "";
-    addMsg(text, "user");
+    userMessage(text);
     handleCancel(text);
     return;
   }
@@ -2629,7 +2643,7 @@ sendMsg = function () {
   /* only custom amount of poriotns uses type amount option */
   if (orderStep === "customQty" && /^[0-9]+$/.test(text)) {
     input.value = "";
-    addMsg(text, "user");
+    userMessage(text);
     handleOrder(text);
     return;
   }
@@ -3264,7 +3278,7 @@ function showMenuRecommendations(text) {
   const recommendations = getMenuRecommendations();
 
   if (!recommendations.length) {
-    addMsg("Aktualnie nie ma danych menu, na podstawie których mogę coś polecić.", "bot");
+    botMessage("Aktualnie nie ma danych menu, na podstawie których mogę coś polecić.");
     return;
   }
 
@@ -3275,10 +3289,8 @@ function showMenuRecommendations(text) {
     .map((item) => `• ${item.name}${item.priceText ? ` — ${item.priceText}` : ""}`)
     .join("\n");
 
-  addMsg(
-    `${popularityNote}${products}\n\nChcesz, żebym od razu pomógł złożyć zamówienie?`,
-    "bot",
-  );
+  botMessage(
+    `${popularityNote}${products}\n\nChcesz, żebym od razu pomógł złożyć zamówienie?`);
   pendingConversationAction = "order_confirmation";
 }
 
@@ -3607,14 +3619,12 @@ async function askAI(text) {
   const safeAnswer = answerFromRestaurantData(text);
 
   if (safeAnswer) {
-    addMsg(safeAnswer, "bot");
+    botMessage(safeAnswer);
     return;
   }
 
-  addMsg(
-    "Mogę pomóc w sprawie menu, godzin otwarcia, kontaktu, rezerwacji albo zamówienia. Nie mam tej informacji w systemie restauracji.",
-    "bot",
-  );
+  botMessage(
+    "Mogę pomóc w sprawie menu, godzin otwarcia, kontaktu, rezerwacji albo zamówienia. Nie mam tej informacji w systemie restauracji.");
 }
 
 /* ===== ADMIN OPEN/CLOSE TOGGLE ===== */
