@@ -146,9 +146,10 @@ const OPENING_HOURS = RESTAURANT_CONFIG.openingHours;
 
 applyRestaurantBranding();
 
+let hintHideTimeout;
 const hintTimeout = setTimeout(() => {
   hint.classList.add("show");
-  setTimeout(() => hint.classList.remove("show"), 6000);
+  hintHideTimeout = setTimeout(() => hint.classList.remove("show"), 10000);
 }, 700);
 
 hint.replaceChildren();
@@ -163,6 +164,7 @@ toggle.onclick = () => {
   box.classList.toggle("open");
   hint.classList.remove("show");
   clearTimeout(hintTimeout);
+  clearTimeout(hintHideTimeout);
 
   if (!box.classList.contains("open")) {
     cancelPendingBotReplies();
@@ -2914,6 +2916,16 @@ window.addEventListener("DOMContentLoaded", function () {
     }, 5000);
   };
 
+  document.addEventListener("visibilitychange", () => {
+    if (
+      document.visibilityState === "visible" &&
+      reservationsContainer.style.display === "block"
+    ) {
+      lastReservationsJSON = "";
+      renderReservationsAdmin();
+    }
+  });
+
   const wrapper = document.createElement("div");
 
   const title = document.createElement("h3");
@@ -3718,9 +3730,94 @@ function showAdminBackendError(container, title) {
 let lastOrdersJSON = "";
 let previousOrdersCount = 0;
 let adminOrderView = "active";
+let completedOrderFilter = "all";
 let adminOrdersCache = [];
 let adminOrdersLoaded = false;
 let pendingMovingOrders = new Set();
+
+function getLocalDateKey(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return null;
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function parseDateValue(value) {
+  if (!value) return null;
+  const dateOnly = String(value).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (dateOnly) {
+    return new Date(+dateOnly[1], +dateOnly[2] - 1, +dateOnly[3]);
+  }
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function createFilterMenu({ label, value, options, onChange }) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "admin-filter";
+
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "admin-filter-button";
+  button.setAttribute("aria-label", label);
+  button.setAttribute("aria-haspopup", "menu");
+  button.setAttribute("aria-expanded", "false");
+  button.innerHTML =
+    '<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 5h18l-7 8v5l-4 2v-7L3 5z"/></svg><span class="admin-filter-name"></span>';
+  button.querySelector(".admin-filter-name").textContent =
+    options.find((option) => option.value === value)?.label || "Wszystkie";
+
+  const menu = document.createElement("div");
+  menu.className = "admin-filter-menu";
+  menu.setAttribute("role", "menu");
+  menu.hidden = true;
+
+  const close = () => {
+    menu.hidden = true;
+    button.setAttribute("aria-expanded", "false");
+    document.removeEventListener("click", onDocumentClick);
+  };
+  const onDocumentClick = (event) => {
+    if (!wrapper.contains(event.target)) close();
+  };
+  const onKeydown = (event) => {
+    if (event.key === "Escape") {
+      close();
+      button.focus();
+    }
+  };
+  wrapper.addEventListener("keydown", onKeydown);
+
+  options.forEach((option) => {
+    const item = document.createElement("button");
+    item.type = "button";
+    item.className = "admin-filter-option";
+    item.setAttribute("role", "menuitemradio");
+    item.setAttribute("aria-checked", String(option.value === value));
+    item.textContent = `${option.value === value ? "✓ " : ""}${option.label}`;
+    item.onclick = () => {
+      close();
+      onChange(option.value);
+    };
+    menu.appendChild(item);
+  });
+
+  button.onclick = (event) => {
+    event.stopPropagation();
+    const willOpen = menu.hidden;
+    menu.hidden = !willOpen;
+    button.setAttribute("aria-expanded", String(willOpen));
+    if (willOpen) {
+      document.addEventListener("click", onDocumentClick);
+      menu.querySelector('[aria-checked="true"]')?.focus();
+    } else {
+      document.removeEventListener("click", onDocumentClick);
+    }
+  };
+  wrapper.append(button, menu);
+  return wrapper;
+}
 
 function getSeenOrderIds() {
   try {
@@ -3788,6 +3885,25 @@ function renderOrderViewTabs(container) {
   });
 
   container.appendChild(tabs);
+
+  if (adminOrderView === "completed") {
+    tabs.appendChild(
+      createFilterMenu({
+        label: "Filtruj zrealizowane zamówienia",
+        value: completedOrderFilter,
+        options: [
+          { value: "all", label: "Wszystkie" },
+          { value: "today", label: "Dzisiaj" },
+          { value: "archive", label: "Archiwalne" },
+        ],
+        onChange(value) {
+          completedOrderFilter = value;
+          lastOrdersJSON = "";
+          renderOrdersAdmin({ useCache: true });
+        },
+      }),
+    );
+  }
 }
 
 function showOrderEmptyState(container) {
@@ -3811,10 +3927,16 @@ function showOrderEmptyState(container) {
   }
 
   if (adminOrderView === "completed") {
+    const filterLabel =
+      completedOrderFilter === "today"
+        ? "dzisiaj"
+        : completedOrderFilter === "archive"
+          ? "w archiwum"
+          : "";
     empty.innerHTML = `
       <div class="admin-empty-icon">✅</div>
       <strong>Brak zrealizowanych zamówień</strong>
-      <span>Zrealizowane i anulowane zamówienia trafią tutaj.</span>
+      <span>${filterLabel ? `Brak zamówień ${filterLabel}.` : "Zrealizowane i anulowane zamówienia trafią tutaj."}</span>
     `;
   }
 
@@ -3893,6 +4015,7 @@ async function renderOrdersAdmin(options = {}) {
     const currentJSON = JSON.stringify({
       orders,
       view: adminOrderView,
+      completedFilter: completedOrderFilter,
       pending: Array.from(pendingMovingOrders),
     });
 
@@ -3929,13 +4052,35 @@ async function renderOrdersAdmin(options = {}) {
     return;
   }
 
+  const todayKey = getLocalDateKey(new Date());
   const visibleOrders = orders.filter((order) => {
     if (pendingMovingOrders.has(String(order.id))) {
       return false;
     }
 
-    return getOrderBucket(order) === adminOrderView;
+    if (getOrderBucket(order) !== adminOrderView) return false;
+    if (adminOrderView !== "completed" || completedOrderFilter === "all") {
+      return true;
+    }
+
+    const completedKey = getLocalDateKey(parseDateValue(order.completedAt));
+    if (!completedKey) return false;
+    return completedOrderFilter === "today"
+      ? completedKey === todayKey
+      : completedKey < todayKey;
   });
+
+  if (
+    adminOrderView === "completed" &&
+    completedOrderFilter === "all" &&
+    visibleOrders.some((order) => !parseDateValue(order.completedAt))
+  ) {
+    const notice = document.createElement("p");
+    notice.className = "admin-filter-notice";
+    notice.textContent =
+      "Część rekordów nie ma daty realizacji (completedAt), dlatego nie można przypisać ich do „Dzisiaj” ani „Archiwalne”.";
+    container.appendChild(notice);
+  }
 
   if (!visibleOrders.length) {
     showOrderEmptyState(container);
@@ -4202,6 +4347,33 @@ async function renderOrdersAdmin(options = {}) {
 }
 
 let lastReservationsJSON = "";
+let reservationFilter = "all";
+
+function getReservationEnd(reservation) {
+  const explicitEnd =
+    reservation.endAt || reservation.endsAt || reservation.endDateTime;
+  if (explicitEnd) return parseDateValue(explicitEnd);
+  if (!reservation.date) return null;
+
+  const dateMatch = String(reservation.date).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!dateMatch) return parseDateValue(reservation.date);
+  const timeMatch = String(reservation.time || "").match(/^(\d{1,2}):(\d{2})/);
+  return new Date(
+    +dateMatch[1],
+    +dateMatch[2] - 1,
+    +dateMatch[3],
+    timeMatch ? +timeMatch[1] : 23,
+    timeMatch ? +timeMatch[2] : 59,
+    timeMatch ? 0 : 59,
+  );
+}
+
+function isReservationInactive(reservation, now = new Date()) {
+  const status = String(reservation.status || "").toLocaleLowerCase("pl");
+  if (status.includes("anul") || status.includes("zakończ")) return true;
+  const end = getReservationEnd(reservation);
+  return end ? end.getTime() < now.getTime() : false;
+}
 
 async function renderReservationsAdmin() {
   const container = document.getElementById("reservations-admin-container");
@@ -4213,7 +4385,11 @@ async function renderReservationsAdmin() {
   try {
     reservations = await fetchJSONWithTimeout(`${API_BASE}/reservations`);
 
-    const currentJSON = JSON.stringify(reservations);
+    const currentJSON = JSON.stringify({
+      reservations,
+      filter: reservationFilter,
+      minute: Math.floor(Date.now() / 60000),
+    });
 
     if (currentJSON === lastReservationsJSON) {
       return;
@@ -4222,6 +4398,22 @@ async function renderReservationsAdmin() {
     lastReservationsJSON = currentJSON;
 
     container.innerHTML = "<h3>📅 Rezerwacje</h3>";
+    container.appendChild(
+      createFilterMenu({
+        label: "Filtruj rezerwacje",
+        value: reservationFilter,
+        options: [
+          { value: "all", label: "Wszystkie" },
+          { value: "current", label: "Aktualne" },
+          { value: "inactive", label: "Nieaktywne" },
+        ],
+        onChange(value) {
+          reservationFilter = value;
+          lastReservationsJSON = "";
+          renderReservationsAdmin();
+        },
+      }),
+    );
   } catch (e) {
     console.error(e);
 
@@ -4229,9 +4421,20 @@ async function renderReservationsAdmin() {
     return;
   }
 
-  if (!reservations.length) {
+  const visibleReservations = reservations.filter((reservation) => {
+    if (reservationFilter === "all") return true;
+    const inactive = isReservationInactive(reservation);
+    return reservationFilter === "inactive" ? inactive : !inactive;
+  });
+
+  if (!visibleReservations.length) {
     const empty = document.createElement("div");
-    empty.textContent = "Brak rezerwacji";
+    empty.textContent =
+      reservationFilter === "current"
+        ? "Brak aktualnych rezerwacji"
+        : reservationFilter === "inactive"
+          ? "Brak nieaktywnych rezerwacji"
+          : "Brak rezerwacji";
     empty.style.color = "#666";
 
     container.appendChild(empty);
@@ -4239,7 +4442,7 @@ async function renderReservationsAdmin() {
     return;
   }
 
-  reservations
+  visibleReservations
     .slice()
     .reverse()
     .forEach((reservation) => {
