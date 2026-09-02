@@ -42,10 +42,12 @@ function getEstimatedDeliveryTimeText() {
 }
 
 function showWelcomeMessage() {
-  return botReply(() => {
-    addMsg("Cześć! 👋\nW czym mogę Ci pomóc?", "bot");
-    addQuick();
-  });
+  return botReply(renderWelcomeMessage, BOT_WELCOME_TYPING_DELAY);
+}
+
+function renderWelcomeMessage() {
+  addMsg("Cześć! 👋\nW czym mogę Ci pomóc?", "bot");
+  addQuick();
 }
 let menuImages = [];
 let sandwichImages = [];
@@ -225,6 +227,7 @@ function scrollToBottom() {
   });
 }
 
+const BOT_WELCOME_TYPING_DELAY = 750;
 const BOT_TYPING_DELAY = 1500;
 let typingIndicator = null;
 let botReplyGeneration = 0;
@@ -274,12 +277,12 @@ function showTypingIndicator(duration = BOT_TYPING_DELAY, generation = botReplyG
   });
 }
 
-function botReply(renderResponse) {
+function botReply(renderResponse, typingDelay = BOT_TYPING_DELAY) {
   const generation = botReplyGeneration;
   const queuedReply = botReplyQueue.then(async () => {
     if (generation !== botReplyGeneration) return false;
 
-    const isCurrent = await showTypingIndicator(BOT_TYPING_DELAY, generation);
+    const isCurrent = await showTypingIndicator(typingDelay, generation);
     if (!isCurrent) return false;
 
     renderResponse();
@@ -1633,12 +1636,9 @@ function getFinalOrderTotal() {
 
 const ORDER_CATEGORIES = {};
 
-async function startOrder() {
-  if (menuLoadState === "loading") {
-    await menuLoadPromise;
-  }
-
-  return botReply(renderOrderFlow);
+function startOrder() {
+  renderOrderFlow();
+  return true;
 }
 
 function renderOrderFlow() {
@@ -1675,7 +1675,7 @@ function renderOrderFlow() {
     orderFlowActive = false;
     orderStep = null;
     messages.innerHTML = "";
-    showWelcomeMessage();
+    renderWelcomeMessage();
     document.getElementById("chat-input").style.display = "flex";
     hideCartUI();
   };
@@ -1821,7 +1821,7 @@ function groupOrderItems(items) {
 }
 
 function showSizeSelector(product) {
-  return botReply(() => renderSizeSelector(product));
+  return renderSizeSelector(product);
 }
 
 function renderSizeSelector(product) {
@@ -1904,7 +1904,7 @@ function createProductIngredients(ingredientsText) {
 }
 
 function showQuantitySelector(item, ingredientsText) {
-  return botReply(() => renderQuantitySelector(item, ingredientsText));
+  return renderQuantitySelector(item, ingredientsText);
 }
 
 function renderQuantitySelector(item, ingredientsText) {
@@ -2135,7 +2135,7 @@ function handleOrder(text) {
       orderFlowActive = false;
       orderStep = null;
       messages.innerHTML = "";
-      showWelcomeMessage();
+      renderWelcomeMessage();
       document.getElementById("chat-input").style.display = "flex";
     };
 
@@ -2156,7 +2156,7 @@ function handleOrder(text) {
 }
 
 function showOrderSuccessScreen(msg) {
-  return botReply(() => renderOrderSuccessScreen(msg));
+  return renderOrderSuccessScreen(msg);
 }
 
 function renderOrderSuccessScreen(msg) {
@@ -2206,7 +2206,7 @@ function renderOrderSuccessScreen(msg) {
 
   setTimeout(function () {
     messages.innerHTML = "";
-    showWelcomeMessage();
+    renderWelcomeMessage();
 
     document.getElementById("chat-input").style.display = "flex";
   }, 6500);
@@ -2239,7 +2239,7 @@ function showCart() {
     orderFlowActive = false;
     orderStep = null;
     messages.innerHTML = "";
-    showWelcomeMessage();
+    renderWelcomeMessage();
     document.getElementById("chat-input").style.display = "flex";
   };
 
@@ -2454,12 +2454,12 @@ startOrder = function () {
   cancelStep = null;
 
   if (!isRestaurantOpen()) {
-    botMessage("❌ Restauracja jest obecnie zamknięta.");
+    addMsg("❌ Restauracja jest obecnie zamknięta.", "bot");
     return;
   }
 
   if (isSpecialClosedDay()) {
-    botMessage("❌ Dziś restauracja jest zamknięta.");
+    addMsg("❌ Dziś restauracja jest zamknięta.", "bot");
     return;
   }
 
@@ -2471,11 +2471,10 @@ startOrder = function () {
         return;
         }
         */
-  return originalStartOrder().then((rendered) => {
-    if (rendered && orderCart.length > 0) showCartUI();
-    scrollToBottom();
-    return rendered;
-  });
+  const rendered = originalStartOrder();
+  if (rendered && orderCart.length > 0) showCartUI();
+  scrollToBottom();
+  return rendered;
 };
 
 /* detect order intent */
