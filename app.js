@@ -2917,10 +2917,14 @@ window.addEventListener("DOMContentLoaded", function () {
   };
 
   document.addEventListener("visibilitychange", () => {
-    if (
-      document.visibilityState === "visible" &&
-      reservationsContainer.style.display === "block"
-    ) {
+    if (document.visibilityState !== "visible") return;
+
+    if (ordersContainer.style.display === "block") {
+      lastOrdersJSON = "";
+      renderOrdersAdmin();
+    }
+
+    if (reservationsContainer.style.display === "block") {
       lastReservationsJSON = "";
       renderReservationsAdmin();
     }
@@ -3765,8 +3769,7 @@ function createFilterMenu({ label, value, options, onChange }) {
   button.setAttribute("aria-expanded", "false");
   button.innerHTML =
     '<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 5h18l-7 8v5l-4 2v-7L3 5z"/></svg><span class="admin-filter-name"></span>';
-  button.querySelector(".admin-filter-name").textContent =
-    options.find((option) => option.value === value)?.label || "Wszystkie";
+  button.querySelector(".admin-filter-name").textContent = "Filtruj";
 
   const menu = document.createElement("div");
   menu.className = "admin-filter-menu";
@@ -4017,6 +4020,7 @@ async function renderOrdersAdmin(options = {}) {
       view: adminOrderView,
       completedFilter: completedOrderFilter,
       pending: Array.from(pendingMovingOrders),
+      localDate: getLocalDateKey(new Date()),
     });
 
     if (currentJSON === lastOrdersJSON) {
@@ -4370,7 +4374,15 @@ function getReservationEnd(reservation) {
 
 function isReservationInactive(reservation, now = new Date()) {
   const status = String(reservation.status || "").toLocaleLowerCase("pl");
-  if (status.includes("anul") || status.includes("zakończ")) return true;
+  if (
+    status.includes("anul") ||
+    status.includes("cancel") ||
+    status.includes("zakończ") ||
+    status.includes("completed") ||
+    status.includes("zrealiz")
+  ) {
+    return true;
+  }
   const end = getReservationEnd(reservation);
   return end ? end.getTime() < now.getTime() : false;
 }
