@@ -442,16 +442,21 @@ function isValidTime(t) {
   return false;
 }
 
-function getReservationDate(dateText) {
-  const value = String(dateText || "").trim().toLowerCase();
-  const today = new Date();
+function getReservationDate(dateText, now = new Date()) {
+  const value = String(dateText || "").trim().toLocaleLowerCase("pl");
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const relativeDateMatch = value.match(
+    /(?:^|[^\p{L}])(pojutrze|jutro|dzisiaj|dziś|dzis)(?=$|[^\p{L}])/u,
+  );
 
-  if (["dzis", "dziś", "dzisiaj"].includes(value)) {
+  if (relativeDateMatch) {
+    const dayOffset = relativeDateMatch[1] === "jutro"
+      ? 1
+      : relativeDateMatch[1] === "pojutrze"
+        ? 2
+        : 0;
+    today.setDate(today.getDate() + dayOffset);
     return today;
-  }
-
-  if (value === "jutro") {
-    return new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
   }
 
   const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -467,7 +472,7 @@ function getReservationDate(dateText) {
 
   if (shortMatch) {
     return new Date(
-      Number(shortMatch[3]) || today.getFullYear(),
+      Number(shortMatch[3]) || now.getFullYear(),
       Number(shortMatch[2]) - 1,
       Number(shortMatch[1]),
     );
@@ -612,11 +617,12 @@ async function handleCancel(text) {
 
 async function handleReservation(t) {
   if (reservationStep === "date") {
-    if (!isValidDate(t)) {
+    const selectedDate = getReservationDate(t);
+    if (!selectedDate) {
       botMessage("❗ Podaj poprawną datę (np. 12.03 lub jutro).");
       return;
     }
-    reservation.date = t;
+    reservation.date = getLocalDateKey(selectedDate);
     reservationStep = "time";
     botMessage("⏰ O której godzinie? (np. 18:00)");
     return;
