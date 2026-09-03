@@ -2125,6 +2125,16 @@ button,
   border: 1px solid rgba(11, 19, 32, 0.08) !important;
 }
 
+.orders-filter-row {
+  display: flex;
+  align-items: flex-start;
+  margin: -6px 0 8px;
+}
+
+.orders-filter-row .admin-filter {
+  margin: 0;
+}
+
 .order-view-label {
   width: auto !important;
   flex: 0 0 auto !important;
@@ -2910,7 +2920,9 @@ button,
   position: absolute;
   z-index: 100;
   top: calc(100% + 6px);
-  right: 0;
+  left: 0;
+  right: auto;
+  transform: none;
   min-width: 160px;
   max-width: min(220px, calc(100vw - 32px));
   padding: 5px;
@@ -2956,6 +2968,7 @@ button,
 
   .admin-filter-menu {
     width: min(220px, calc(100vw - 60px));
+    max-width: calc(100vw - 32px);
   }
 }
 
