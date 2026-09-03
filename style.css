@@ -2109,10 +2109,11 @@ button,
 }
 
 .order-view-tabs {
-  width: fit-content !important;
+  width: min(100%, 430px) !important;
   max-width: 100% !important;
 
-  display: inline-flex !important;
+  display: grid !important;
+  grid-template-columns: auto repeat(3, minmax(0, 1fr));
   align-items: center !important;
   gap: 6px !important;
 
@@ -2136,16 +2137,16 @@ button,
 }
 
 .order-view-tab {
-  width: auto !important;
+  width: 100% !important;
   min-width: 0 !important;
   max-width: none !important;
 
-  flex: 0 0 auto !important;
+  box-sizing: border-box !important;
 
   min-height: 32px !important;
   padding: 7px 11px !important;
 
-  border: none !important;
+  border: 1px solid transparent !important;
   border-radius: 999px !important;
 
   background: transparent !important;
@@ -2172,6 +2173,7 @@ button,
     var(--brand-red-dark)
   ) !important;
   color: #fff !important;
+  border-color: var(--brand-red) !important;
   box-shadow: 0 6px 14px rgba(56, 167, 255, 0.18) !important;
 }
 
@@ -2879,6 +2881,7 @@ button,
 
 .admin-filter {
   position: relative;
+  z-index: 50;
   display: inline-flex;
   margin-left: auto;
   margin-block: 8px 12px;
@@ -2905,7 +2908,7 @@ button,
 
 .admin-filter-menu {
   position: absolute;
-  z-index: 20;
+  z-index: 100;
   top: calc(100% + 6px);
   right: 0;
   min-width: 160px;
@@ -2917,6 +2920,43 @@ button,
   box-shadow: 0 10px 25px rgba(11, 19, 32, 0.18);
   display: grid;
   gap: 5px;
+}
+
+/* The reservation filter menu must escape the list's former scroll clip. */
+#reservations-admin-container {
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+.admin-col-right {
+  position: relative;
+  z-index: 2;
+}
+
+.admin-col-left {
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 560px) {
+  .order-view-tabs {
+    width: 100% !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    border-radius: 16px !important;
+  }
+
+  .order-view-label {
+    grid-column: 1 / -1;
+    padding: 2px 8px 0 !important;
+  }
+
+  .order-view-tab {
+    padding-inline: 6px !important;
+  }
+
+  .admin-filter-menu {
+    width: min(220px, calc(100vw - 60px));
+  }
 }
 
 .admin-filter-menu[hidden] { display: none; }
