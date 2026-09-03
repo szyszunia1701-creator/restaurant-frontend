@@ -966,7 +966,10 @@ window.addEventListener("DOMContentLoaded", function () {
 });
 
 function showSandwich() {
-  return botReply(renderSandwichCard);
+  // The media request starts with the page. Queue the reply only after that
+  // request settles so a quick click after refresh gets the same server image
+  // that is used by the admin preview.
+  return mediaLoadPromise.then(() => botReply(renderSandwichCard));
 }
 
 function renderSandwichCard() {
@@ -985,11 +988,7 @@ function renderSandwichCard() {
   text.append(title, details);
   card.appendChild(text);
 
-  function appendSandwichImage() {
-    if (!sandwichImages.length || card.querySelector(".sandwich-card-image")) {
-      return;
-    }
-
+  if (sandwichImages.length) {
     const image = document.createElement("img");
     image.className = "sandwich-card-image";
     image.src = sandwichImages[0];
@@ -1000,11 +999,6 @@ function renderSandwichCard() {
   }
 
   messages.appendChild(card);
-  if (mediaLoadState === "loading") {
-    mediaLoadPromise.then(appendSandwichImage);
-  } else {
-    appendSandwichImage();
-  }
   scrollToBottom();
 }
 
@@ -3896,7 +3890,9 @@ function renderOrderViewTabs(container) {
   container.appendChild(tabs);
 
   if (adminOrderView === "completed") {
-    tabs.appendChild(
+    const filterRow = document.createElement("div");
+    filterRow.className = "orders-filter-row";
+    filterRow.appendChild(
       createFilterMenu({
         label: "Filtruj zrealizowane zamówienia",
         value: completedOrderFilter,
@@ -3912,6 +3908,7 @@ function renderOrderViewTabs(container) {
         },
       }),
     );
+    container.appendChild(filterRow);
   }
 }
 
