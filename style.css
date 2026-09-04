@@ -240,8 +240,8 @@ button,
 /* X panelu admina — widoczny w środku okna, czarny, bez tła */
 #admin-close {
   position: absolute !important;
-  top: 10px !important;
-  right: 10px !important;
+  top: 12px !important;
+  right: 12px !important;
   margin: 0 !important;
   width: 44px !important;
   height: 44px !important;
@@ -2289,6 +2289,11 @@ button,
 
 /* ===== ADMIN TABS SAME HEIGHT MOBILE ===== */
 @media (max-width: 760px) {
+  #admin-close {
+    top: 8px !important;
+    right: 8px !important;
+  }
+
   #menu-admin-container,
   #orders-admin-container,
   #reservations-admin-container {
