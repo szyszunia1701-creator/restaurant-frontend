@@ -2750,11 +2750,9 @@ window.addEventListener("DOMContentLoaded", function () {
 
   const children = [...panel.children];
 
-  /* keep the close control outside the columns so it is anchored to the panel */
-  let closeBtn = null;
-  children.forEach((el) => {
-    if (el.tagName === "BUTTON" && el.innerText === "✕") closeBtn = el;
-  });
+  /* #admin-close stays in its original top-level DOM position. Moving it into a
+     column makes that column its containing block and is intentionally avoided. */
+  const closeBtn = document.getElementById("admin-close");
 
   const container = document.createElement("div");
   container.className = "admin-columns";
@@ -2776,8 +2774,6 @@ window.addEventListener("DOMContentLoaded", function () {
   container.appendChild(right);
 
   panel.appendChild(container);
-
-  if (closeBtn) panel.appendChild(closeBtn);
 });
 
 function normalizeMenuIngredients(data) {
@@ -2920,9 +2916,6 @@ window.addEventListener("DOMContentLoaded", function () {
 
   const reservationsContainer = document.createElement("div");
   reservationsContainer.id = "reservations-admin-container";
-  reservationsContainer.style.maxHeight = "600px";
-  reservationsContainer.style.overflowY = "auto";
-  reservationsContainer.style.paddingRight = "6px";
   reservationsContainer.style.display = "none";
 
   rightCol.appendChild(menuContainer);
@@ -2980,7 +2973,7 @@ window.addEventListener("DOMContentLoaded", function () {
 
     menuContainer.style.display = "none";
     ordersContainer.style.display = "none";
-    reservationsContainer.style.display = "block";
+    reservationsContainer.style.display = "flex";
 
     showAdminLoading(
       reservationsContainer,
@@ -2996,7 +2989,7 @@ window.addEventListener("DOMContentLoaded", function () {
     }
 
     reservationsInterval = setInterval(() => {
-      if (reservationsContainer.style.display === "block") {
+      if (reservationsContainer.style.display === "flex") {
         renderReservationsAdmin();
       }
     }, 5000);
@@ -3010,7 +3003,7 @@ window.addEventListener("DOMContentLoaded", function () {
       renderOrdersAdmin();
     }
 
-    if (reservationsContainer.style.display === "block") {
+    if (reservationsContainer.style.display === "flex") {
       lastReservationsJSON = "";
       renderReservationsAdmin();
     }
@@ -4495,8 +4488,11 @@ async function renderReservationsAdmin() {
 
     lastReservationsJSON = currentJSON;
 
-    container.innerHTML = "<h3>📅 Rezerwacje</h3>";
-    container.appendChild(
+    container.innerHTML = "";
+    const staticArea = document.createElement("div");
+    staticArea.className = "admin-list-static-header";
+    staticArea.innerHTML = "<h3>📅 Rezerwacje</h3>";
+    staticArea.appendChild(
       createFilterMenu({
         label: "Filtruj rezerwacje",
         value: reservationFilter,
@@ -4512,6 +4508,9 @@ async function renderReservationsAdmin() {
         },
       }),
     );
+    const list = document.createElement("div");
+    list.className = "admin-dynamic-list reservation-list";
+    container.append(staticArea, list);
   } catch (e) {
     console.error(e);
 
@@ -4535,7 +4534,7 @@ async function renderReservationsAdmin() {
           : "Brak rezerwacji";
     empty.style.color = "#666";
 
-    container.appendChild(empty);
+    container.querySelector(".reservation-list").appendChild(empty);
 
     return;
   }
@@ -4636,7 +4635,7 @@ async function renderReservationsAdmin() {
         card.appendChild(actions);
       }
 
-      container.appendChild(card);
+      container.querySelector(".reservation-list").appendChild(card);
     });
 }
 
