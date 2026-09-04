@@ -217,6 +217,8 @@ button,
 
 /* ===== PANEL ADMINA ===== */
 #admin-panel {
+  --admin-close-top: 12px;
+  --admin-close-right: 12px;
   display: none;
   position: fixed !important;
   top: 50% !important;
@@ -224,8 +226,10 @@ button,
   transform: translate(-50%, -50%) !important;
   width: 1120px;
   max-width: 95vw;
+  height: min(760px, 88vh);
   max-height: 88vh;
-  overflow: auto;
+  overflow: hidden;
+  box-sizing: border-box;
   background: rgba(255, 248, 238, 0.97);
   color: var(--text-main);
   padding: 18px 20px 22px;
@@ -239,9 +243,9 @@ button,
 
 /* X panelu admina — widoczny w środku okna, czarny, bez tła */
 #admin-close {
-  position: absolute !important;
-  top: 12px !important;
-  right: 12px !important;
+  position: absolute;
+  top: var(--admin-close-top);
+  right: var(--admin-close-right);
   margin: 0 !important;
   width: 44px !important;
   height: 44px !important;
@@ -354,6 +358,8 @@ button,
 /* ===== ADMIN PANEL 2 COLUMNS ===== */
 .admin-columns {
   display: flex;
+  height: 100%;
+  min-height: 0;
   gap: 20px;
   margin-top: 2px;
   align-items: stretch;
@@ -369,15 +375,50 @@ button,
 
 .admin-col-left {
   flex: 0 0 280px;
+  min-height: 0;
+  overflow-y: auto;
   padding: 18px;
 }
 
 .admin-col-right {
   flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   min-width: 0;
   padding: 18px;
   border-left: none;
   position: relative;
+}
+
+#menu-admin-container,
+#orders-admin-container,
+#reservations-admin-container {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+#reservations-admin-container {
+  display: flex;
+  flex-direction: column;
+  overflow: visible;
+}
+
+.admin-list-static-header {
+  flex: 0 0 auto;
+  padding-right: 6px;
+}
+
+.admin-dynamic-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 6px;
 }
 
 .admin-col-left input[type="file"] {
@@ -1597,13 +1638,19 @@ button,
 
   /* admin zostawiamy na razie tylko bez wychodzenia poza ekran */
   #admin-panel {
+    --admin-close-top: 8px;
+    --admin-close-right: 8px;
     width: calc(100vw - 24px);
+    height: calc(100dvh - 24px);
     max-height: 88vh;
     padding: 14px;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
 
   .admin-columns {
     flex-direction: column;
+    height: auto;
   }
 
   .admin-col-left,
@@ -2266,45 +2313,6 @@ button,
   }
 }
 
-/* ===== ADMIN TABS SAME HEIGHT ===== */
-
-/* wszystkie zakładki w panelu admina mają tę samą minimalną wysokość */
-#menu-admin-container,
-#orders-admin-container,
-#reservations-admin-container {
-  min-height: 600px !important;
-  box-sizing: border-box !important;
-}
-
-/* menu też ma własny scroll, tak jak zamówienia i rezerwacje */
-#menu-admin-container {
-  overflow-y: auto !important;
-  padding-right: 6px !important;
-}
-
-/* prawa kolumna nie zmienia wysokości przy przełączaniu zakładek */
-.admin-col-right {
-  min-height: 680px !important;
-}
-
-/* ===== ADMIN TABS SAME HEIGHT MOBILE ===== */
-@media (max-width: 760px) {
-  #admin-close {
-    top: 8px !important;
-    right: 8px !important;
-  }
-
-  #menu-admin-container,
-  #orders-admin-container,
-  #reservations-admin-container {
-    min-height: 520px !important;
-  }
-
-  .admin-col-right {
-    min-height: 600px !important;
-  }
-}
-
 .new-order-badge {
   display: inline-flex;
   align-items: center;
@@ -2954,12 +2962,6 @@ button,
   box-shadow: 0 10px 25px rgba(11, 19, 32, 0.18);
   display: grid;
   gap: 5px;
-}
-
-/* The reservation filter menu must escape the list's former scroll clip. */
-#reservations-admin-container {
-  max-height: none !important;
-  overflow: visible !important;
 }
 
 .admin-col-right {
