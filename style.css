@@ -238,17 +238,14 @@ button,
 }
 
 /* X panelu admina — widoczny w środku okna, czarny, bez tła */
-#admin-panel > button[onclick="closeAdminPanel()"] {
-  position: sticky !important;
-  top: 6px !important;
-  right: auto !important;
-  left: auto !important;
-  margin-left: auto !important;
-  margin-right: 0 !important;
-  margin-bottom: 4px !important;
-  width: 34px !important;
-  height: 34px !important;
-  min-width: 34px !important;
+#admin-close {
+  position: absolute !important;
+  top: 10px !important;
+  right: 10px !important;
+  margin: 0 !important;
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
   padding: 0 !important;
   display: flex !important;
   align-items: center !important;
@@ -269,7 +266,7 @@ button,
     color 0.16s ease;
 }
 
-#admin-panel > button[onclick="closeAdminPanel()"]:hover {
+#admin-close:hover {
   background: rgba(0, 0, 0, 0.07) !important;
   color: #000 !important;
   transform: none !important;
@@ -380,6 +377,7 @@ button,
   min-width: 0;
   padding: 18px;
   border-left: none;
+  position: relative;
 }
 
 .admin-col-left input[type="file"] {
@@ -397,7 +395,25 @@ button,
   padding: 6px;
   background: rgba(11, 19, 32, 0.07);
   border-radius: 16px;
+  margin-right: 46px !important;
 }
+
+.admin-save-feedback {
+  min-height: 20px;
+  margin-top: 8px;
+  color: var(--text-main);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.admin-save-feedback:empty {
+  min-height: 0;
+  margin-top: 0;
+}
+
+.admin-save-feedback.success { color: #15803d; }
+.admin-save-feedback.error { color: #b91c1c; }
 
 .admin-col-right > div:first-child button {
   flex: 1 1 0;
@@ -1598,6 +1614,7 @@ button,
 
   .admin-col-right > div:first-child {
     flex-wrap: wrap;
+    margin-right: 46px !important;
   }
   /* ===== MOBILE CART PANEL ===== */
   #bottom-cart-panel {

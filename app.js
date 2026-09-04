@@ -56,6 +56,19 @@ let menuLoadState = "loading";
 let mediaLoadPromise;
 let menuLoadPromise;
 
+function normalizeMediaUrls(value) {
+  const items = Array.isArray(value) ? value : value ? [value] : [];
+  return items
+    .map((item) => {
+      if (typeof item === "string") return item.trim();
+      if (item && typeof item === "object") {
+        return String(item.url || item.secure_url || item.src || "").trim();
+      }
+      return "";
+    })
+    .filter(Boolean);
+}
+
 async function saveMedia(key, urls) {
   const response = await fetch(`${API_BASE}/save-media`, {
     method: "POST",
@@ -928,29 +941,80 @@ if (sandwichInput) {
 const saveAllBtn = document.getElementById("save-all");
 
 if (saveAllBtn) {
-  saveAllBtn.onclick = function () {
+  saveAllBtn.onclick = async function () {
     const name = document.getElementById("admin-name").value.trim();
     const price = document.getElementById("admin-price").value.trim();
+    const openToggle = document.getElementById("restaurant-open-toggle");
+    const feedback = document.getElementById("admin-save-feedback");
 
-    /* zapis kanapki tylko jeśli coś wpisano */
-    if (name) {
-      const data = { name, price };
-      localStorage.setItem("adminKanapkaTygodnia", JSON.stringify(data));
+    saveAllBtn.disabled = true;
+    if (feedback) {
+      feedback.className = "admin-save-feedback";
+      feedback.textContent = "Zapisywanie…";
     }
 
-    /* okno admin zamyka się ZAWSZE */
-    document.getElementById("admin-panel").style.display = "none";
-    alert("Zmiany zapisane ✅");
+    try {
+      const previous = getSavedWeeklySandwich();
+      const data = {
+        name: name || previous?.name || "",
+        price: price || previous?.price || "",
+      };
+      localStorage.setItem("adminKanapkaTygodnia", JSON.stringify(data));
+      if (openToggle) {
+        localStorage.setItem("restaurantOpen", String(openToggle.checked));
+      }
+
+      const sandwichUrls = normalizeMediaUrls(sandwichImages);
+      const menuUrls = normalizeMediaUrls(menuImages);
+      const mediaSaves = [];
+      // Puste pole plikowe nie oznacza usunięcia zapisanych mediów. Jawne
+      // usuwanie miniaturek nadal zapisuje pustą listę w swoim handlerze.
+      if (sandwichUrls.length) {
+        mediaSaves.push(saveMedia("sandwichImages", sandwichUrls));
+      }
+      if (menuUrls.length) {
+        mediaSaves.push(saveMedia("menuImages", menuUrls));
+      }
+      await Promise.all(mediaSaves);
+
+      if (feedback) {
+        feedback.className = "admin-save-feedback success";
+        feedback.textContent = "Zapisano zmiany";
+      }
+    } catch (error) {
+      console.error(error);
+      if (feedback) {
+        feedback.className = "admin-save-feedback error";
+        feedback.textContent = "Nie udało się zapisać zmian";
+      }
+    } finally {
+      saveAllBtn.disabled = false;
+    }
   };
 }
 
 /* NADPISANIE DANIA DNIA */
 const originalGetDailySpecial = pobierzKanapkeTygodnia;
 
+function getSavedWeeklySandwich() {
+  try {
+    const saved = JSON.parse(
+      localStorage.getItem("adminKanapkaTygodnia") || "null",
+    );
+    if (!saved || typeof saved !== "object") return null;
+    return {
+      name: String(saved.name || "").trim(),
+      price: String(saved.price || "").trim(),
+    };
+  } catch (error) {
+    console.error("Nieprawidłowe dane kanapki tygodnia", error);
+    return null;
+  }
+}
+
 pobierzKanapkeTygodnia = function () {
-  const saved = localStorage.getItem("adminKanapkaTygodnia");
-  if (saved) {
-    const data = JSON.parse(saved);
+  const data = getSavedWeeklySandwich();
+  if (data?.name) {
     return `${data.name}${data.price ? "\nCena: " + data.price : ""}`;
   }
   return originalGetDailySpecial();
@@ -962,14 +1026,26 @@ window.addEventListener("DOMContentLoaded", function () {
   const btn = document.getElementById("save-all");
   if (panel && btn) {
     panel.appendChild(btn);
+
+    const saved = getSavedWeeklySandwich();
+    if (saved) {
+      document.getElementById("admin-name").value = saved.name;
+      document.getElementById("admin-price").value = saved.price;
+    }
+
+    const feedback = document.createElement("div");
+    feedback.id = "admin-save-feedback";
+    feedback.className = "admin-save-feedback";
+    feedback.setAttribute("role", "status");
+    feedback.setAttribute("aria-live", "polite");
+    btn.insertAdjacentElement("afterend", feedback);
   }
 });
 
 function showSandwich() {
-  // The media request starts with the page. Queue the reply only after that
-  // request settles so a quick click after refresh gets the same server image
-  // that is used by the admin preview.
-  return mediaLoadPromise.then(() => botReply(renderSandwichCard));
+  // Never gate the whole card on the media endpoint: its text must render even
+  // when the image request is slow or fails.
+  return botReply(renderSandwichCard);
 }
 
 function renderSandwichCard() {
@@ -988,17 +1064,25 @@ function renderSandwichCard() {
   text.append(title, details);
   card.appendChild(text);
 
-  if (sandwichImages.length) {
+  function appendImage() {
+    const imageUrl = normalizeMediaUrls(sandwichImages)[0];
+    if (!imageUrl || !card.isConnected || card.querySelector("img")) return;
+
     const image = document.createElement("img");
     image.className = "sandwich-card-image";
-    image.src = sandwichImages[0];
+    image.src = imageUrl;
     image.alt = "Kanapka tygodnia";
     image.onerror = () => image.remove();
     image.onclick = () => openMenuModal(image.src);
     card.appendChild(image);
+    scrollToBottom();
   }
 
   messages.appendChild(card);
+  appendImage();
+  if (mediaLoadState === "loading") {
+    mediaLoadPromise.then(appendImage);
+  }
   scrollToBottom();
 }
 
@@ -1149,8 +1233,8 @@ async function loadMedia() {
     }
 
     const data = await response.json();
-    menuImages = data.menuImages || [];
-    sandwichImages = data.sandwichImages || [];
+    menuImages = normalizeMediaUrls(data.menuImages);
+    sandwichImages = normalizeMediaUrls(data.sandwichImages);
     renderAdminMenuImages();
     renderSandwichImages();
   } catch (error) {
@@ -2598,7 +2682,7 @@ sendMsg = function () {
     return;
   }
 
-  if (["menu", "hours", "contact", "reserve"].includes(intent)) {
+  if (["menu", "daily", "hours", "contact", "reserve"].includes(intent)) {
     oldSendMsg();
     return;
   }
@@ -2666,7 +2750,7 @@ window.addEventListener("DOMContentLoaded", function () {
 
   const children = [...panel.children];
 
-  /* keep close button outside layout */
+  /* anchor the panel control in the right column */
   let closeBtn = null;
   children.forEach((el) => {
     if (el.tagName === "BUTTON" && el.innerText === "✕") closeBtn = el;
@@ -2690,6 +2774,8 @@ window.addEventListener("DOMContentLoaded", function () {
 
   container.appendChild(left);
   container.appendChild(right);
+
+  if (closeBtn) right.appendChild(closeBtn);
 
   panel.appendChild(container);
 });
@@ -3655,12 +3741,9 @@ window.addEventListener("DOMContentLoaded", function () {
 
   const openToggle = document.createElement("input");
   openToggle.type = "checkbox";
+  openToggle.id = "restaurant-open-toggle";
 
   openToggle.checked = localStorage.getItem("restaurantOpen") !== "false";
-
-  openToggle.onchange = function () {
-    localStorage.setItem("restaurantOpen", openToggle.checked);
-  };
 
   openToggleLabel.appendChild(openToggle);
   openToggleLabel.appendChild(document.createTextNode(" Restauracja otwarta"));
