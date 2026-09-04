@@ -2914,6 +2914,20 @@ button,
   animation: hintGentlePulse 2.8s ease-in-out infinite;
 }
 
+@media (min-width: 761px) {
+  #chat-hint {
+    bottom: 148px;
+    padding: 11px 15px;
+    max-width: 296px;
+    font-size: 14px;
+  }
+
+  #chat-hint::after {
+    right: 22px;
+    bottom: -10px;
+  }
+}
+
 @keyframes hintGentlePulse {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.025); }
