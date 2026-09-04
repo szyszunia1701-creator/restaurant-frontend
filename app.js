@@ -2750,7 +2750,7 @@ window.addEventListener("DOMContentLoaded", function () {
 
   const children = [...panel.children];
 
-  /* anchor the panel control in the right column */
+  /* keep the close control outside the columns so it is anchored to the panel */
   let closeBtn = null;
   children.forEach((el) => {
     if (el.tagName === "BUTTON" && el.innerText === "✕") closeBtn = el;
@@ -2775,9 +2775,9 @@ window.addEventListener("DOMContentLoaded", function () {
   container.appendChild(left);
   container.appendChild(right);
 
-  if (closeBtn) right.appendChild(closeBtn);
-
   panel.appendChild(container);
+
+  if (closeBtn) panel.appendChild(closeBtn);
 });
 
 function normalizeMenuIngredients(data) {
