@@ -3131,6 +3131,9 @@ button,
 .quick button.quick-order-main,
 #chat-input button,
 #summary-btn,
+#bottom-cart-total + button,
+#chat-messages > .order-summary-card + button + button,
+.order-form > button:last-child,
 .quantity-more-confirm,
 .cart-added-btn.primary {
   color: #fff;
@@ -3142,10 +3145,27 @@ button,
 .quick button.quick-order-main:hover,
 #chat-input button:hover,
 #summary-btn:hover,
+#bottom-cart-total + button:hover,
+#chat-messages > .order-summary-card + button + button:hover,
+.order-form > button:last-child:hover,
 .quantity-more-confirm:hover,
 .cart-added-btn.primary:hover {
   background: linear-gradient(135deg, var(--brand-blue), var(--brand-blue-hover)) !important;
   box-shadow: 0 10px 24px rgba(56, 167, 255, 0.34) !important;
+}
+
+#bottom-cart-total + button:focus-visible,
+#chat-messages > .order-summary-card + button + button:focus-visible,
+.order-form > button:last-child:focus-visible {
+  outline: 2px solid var(--brand-blue-hover);
+  outline-offset: 2px;
+}
+
+#bottom-cart-total + button:active,
+#chat-messages > .order-summary-card + button + button:active,
+.order-form > button:last-child:active {
+  background: linear-gradient(135deg, #1677c8, var(--brand-blue)) !important;
+  transform: translateY(0) scale(0.98);
 }
 
 #chat-input {
