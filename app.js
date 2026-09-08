@@ -8,16 +8,6 @@ function applyRestaurantBranding() {
     RESTAURANT_CONFIG.branding.chatbotLogo;
 
   document
-    .querySelectorAll("#chat-toggle img, .chat-header-logo")
-    .forEach((image) => {
-      image.src = RESTAURANT_CONFIG.branding.chatbotLogo;
-      image.alt = RESTAURANT_CONFIG.assistantName;
-      image.addEventListener("error", () =>
-        image.classList.add("logo-unavailable"),
-      );
-    });
-
-  document
     .getElementById("chat-toggle")
     .setAttribute("aria-label", `Otwórz ${RESTAURANT_CONFIG.assistantName}`);
 }
@@ -148,6 +138,8 @@ const closeBtn = document.getElementById("chat-close");
 const input = document.getElementById("input");
 const send = document.getElementById("send");
 const messages = document.getElementById("chat-messages");
+const floatingMascot = document.querySelector(".mascot-floating-sprite");
+const headerMascot = document.querySelector(".chat-header-mascot");
 
 let reservationStep = null;
 let reservation = {};
@@ -173,37 +165,197 @@ hintDescription.textContent =
   "Zamów jedzenie, sprawdź menu lub zarezerwuj stolik";
 hint.append(hintTitle, hintDescription);
 
-toggle.onclick = () => {
-  box.classList.toggle("open");
-  hint.classList.remove("show");
-  clearTimeout(hintTimeout);
-  clearTimeout(hintHideTimeout);
+const MASCOT_STATES = {
+  WAVE: "WAVE",
+  IDLE: "IDLE",
+  WINK: "WINK",
+};
+const MASCOT_WAVE_FRAMES = ["wave1", "wave2", "wave1", "wave2", "wave1", "wave2"];
+const MASCOT_WAVE_DELAY = 350;
+const MASCOT_IDLE_DELAY = 1500;
+const MASCOT_WINK_DELAY = 2000;
+const MASCOT_WINK_MIN_DELAY = 12000;
+const MASCOT_WINK_MAX_DELAY = 20000;
+const mascotFrames = RESTAURANT_CONFIG.branding.mascot;
+const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+const loadedMascotFrames = new Set();
+let mascotState = MASCOT_STATES.WAVE;
+let mascotFrame = "wave1";
+let idleFrameIndex = 0;
+let waveStep = 0;
+let nextWinkAt = 0;
+let mascotTimerId = null;
 
-  if (!box.classList.contains("open")) {
+function getWinkDelay() {
+  return (
+    MASCOT_WINK_MIN_DELAY +
+    Math.floor(Math.random() * (MASCOT_WINK_MAX_DELAY - MASCOT_WINK_MIN_DELAY + 1))
+  );
+}
+
+function getAvailableMascotFrame(frameName) {
+  if (loadedMascotFrames.has(frameName)) return frameName;
+  return loadedMascotFrames.has("idle1") ? "idle1" : null;
+}
+
+function setMascotImage(image, frameName) {
+  const availableFrame = getAvailableMascotFrame(frameName);
+  if (!availableFrame) {
+    image.classList.remove("is-loaded");
+    image.removeAttribute("src");
+    return;
+  }
+
+  image.src = mascotFrames[availableFrame];
+  image.classList.add("is-loaded");
+}
+
+function renderMascotFrame(frameName) {
+  mascotFrame = frameName;
+  setMascotImage(floatingMascot, frameName);
+  setMascotImage(
+    headerMascot,
+    mascotState === MASCOT_STATES.WAVE ? `idle${idleFrameIndex + 1}` : frameName,
+  );
+}
+
+function scheduleMascotStep(callback, delay) {
+  clearTimeout(mascotTimerId);
+  mascotTimerId = setTimeout(callback, delay);
+}
+
+function scheduleIdleStep() {
+  const timeUntilWink = Math.max(0, nextWinkAt - Date.now());
+  scheduleMascotStep(advanceIdle, Math.min(MASCOT_IDLE_DELAY, timeUntilWink));
+}
+
+function enterIdle({ resetWink = true } = {}) {
+  mascotState = MASCOT_STATES.IDLE;
+  if (resetWink || nextWinkAt <= Date.now()) {
+    nextWinkAt = Date.now() + getWinkDelay();
+  }
+  renderMascotFrame(`idle${idleFrameIndex + 1}`);
+  scheduleIdleStep();
+}
+
+function finishWink() {
+  mascotState = MASCOT_STATES.IDLE;
+  nextWinkAt = Date.now() + getWinkDelay();
+  renderMascotFrame(`idle${idleFrameIndex + 1}`);
+  scheduleIdleStep();
+}
+
+function enterWink() {
+  mascotState = MASCOT_STATES.WINK;
+  renderMascotFrame("wink1");
+  scheduleMascotStep(finishWink, MASCOT_WINK_DELAY);
+}
+
+function advanceIdle() {
+  if (Date.now() >= nextWinkAt) {
+    enterWink();
+    return;
+  }
+
+  idleFrameIndex = idleFrameIndex === 0 ? 1 : 0;
+  renderMascotFrame(`idle${idleFrameIndex + 1}`);
+  scheduleIdleStep();
+}
+
+function advanceWave() {
+  waveStep += 1;
+  if (waveStep >= MASCOT_WAVE_FRAMES.length) {
+    enterIdle();
+    return;
+  }
+
+  renderMascotFrame(MASCOT_WAVE_FRAMES[waveStep]);
+  scheduleMascotStep(advanceWave, MASCOT_WAVE_DELAY);
+}
+
+function startMascotAnimator() {
+  clearTimeout(mascotTimerId);
+  mascotTimerId = null;
+
+  if (reducedMotionQuery.matches) {
+    mascotState = MASCOT_STATES.IDLE;
+    idleFrameIndex = 0;
+    renderMascotFrame("idle1");
+    return;
+  }
+
+  mascotState = MASCOT_STATES.WAVE;
+  waveStep = 0;
+  renderMascotFrame(MASCOT_WAVE_FRAMES[waveStep]);
+  scheduleMascotStep(advanceWave, MASCOT_WAVE_DELAY);
+}
+
+function preloadMascotFrames() {
+  return Promise.allSettled(
+    Object.entries(mascotFrames).map(
+      ([frameName, source]) =>
+        new Promise((resolve, reject) => {
+          const image = new Image();
+          image.onload = () => {
+            loadedMascotFrames.add(frameName);
+            resolve();
+          };
+          image.onerror = reject;
+          image.src = source;
+        }),
+    ),
+  );
+}
+
+function handleReducedMotionChange() {
+  clearTimeout(mascotTimerId);
+  mascotTimerId = null;
+  idleFrameIndex = 0;
+
+  if (reducedMotionQuery.matches) {
+    mascotState = MASCOT_STATES.IDLE;
+    renderMascotFrame("idle1");
+    return;
+  }
+
+  enterIdle();
+}
+
+function setChatOpen(isOpen) {
+  box.classList.toggle("open", isOpen);
+  toggle.hidden = isOpen;
+  toggle.setAttribute("aria-expanded", String(isOpen));
+
+  if (isOpen) {
+    hint.classList.remove("show");
+    clearTimeout(hintTimeout);
+    clearTimeout(hintHideTimeout);
+
+    if (mascotState === MASCOT_STATES.WAVE) {
+      idleFrameIndex = 0;
+      enterIdle();
+    }
+
+    if (!messages.children.length) {
+      showWelcomeMessage();
+      document.getElementById("chat-input").style.display = "flex";
+    }
+  } else {
     cancelPendingBotReplies();
     orderFlowActive = false;
     orderStep = null;
     pendingConversationAction = null;
     messages.innerHTML = "";
     hideCartUI();
-    return;
   }
+}
 
-  if (!messages.children.length) {
-    showWelcomeMessage();
-    document.getElementById("chat-input").style.display = "flex";
-  }
-};
+toggle.onclick = () => setChatOpen(true);
 
-closeBtn.onclick = () => {
-  cancelPendingBotReplies();
-  box.classList.remove("open");
-  orderFlowActive = false;
-  orderStep = null;
-  pendingConversationAction = null;
-  messages.innerHTML = "";
-  hideCartUI();
-};
+closeBtn.onclick = () => setChatOpen(false);
+
+reducedMotionQuery.addEventListener("change", handleReducedMotionChange);
+preloadMascotFrames().then(startMascotAnimator);
 
 function resetReservation() {
   reservationStep = null;

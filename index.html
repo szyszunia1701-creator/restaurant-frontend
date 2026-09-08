@@ -64,18 +64,28 @@
       ><!-- moved to bottom by JS -->
     </div>
 
-    <div id="chat-toggle" aria-label="Otwórz asystenta">
-      <img alt="Logo asystenta" />
-      <span class="chat-logo-fallback" aria-hidden="true">🍽️</span>
-    </div>
+    <button
+      id="chat-toggle"
+      type="button"
+      aria-label="Otwórz asystenta"
+      aria-controls="chat-box"
+      aria-expanded="false"
+    >
+      <span class="mascot-floating-frame" aria-hidden="true">
+        <img class="mascot-sprite mascot-floating-sprite" alt="" />
+        <span class="chat-logo-fallback">🍽️</span>
+      </span>
+    </button>
     <div id="chat-hint">Cześć 👋<br />Pomogę z zamówieniem i rezerwacją</div>
 
     <div id="chat-box">
       <div id="chat-header">
         <div class="chat-header-identity">
-          <img class="chat-header-logo" alt="Logo asystenta" />
-          <span class="chat-header-logo-fallback" aria-hidden="true">🍽️</span>
-          <span><strong id="assistant-name"></strong><small>Online</small></span>
+          <span class="chat-header-avatar" aria-hidden="true">
+            <img class="mascot-sprite chat-header-mascot" alt="" />
+            <span class="chat-header-logo-fallback">🍽️</span>
+          </span>
+          <span class="chat-header-copy"><strong id="assistant-name"></strong><small>Online</small></span>
         </div>
         <button id="chat-close">✕</button>
       </div>
