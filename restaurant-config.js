@@ -15,5 +15,12 @@ const RESTAURANT_CONFIG = {
   },
   branding: {
     chatbotLogo: "assets/chatbot-logo.png",
+    mascot: {
+      idle1: "assets/mascot/mascot-idle-1.png",
+      idle2: "assets/mascot/mascot-idle-2.png",
+      wink1: "assets/mascot/mascot-wink-1.png",
+      wave1: "assets/mascot/mascot-wave-1.png",
+      wave2: "assets/mascot/mascot-wave-2.png",
+    },
   },
 };
